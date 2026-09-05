@@ -41,7 +41,12 @@ def test_run_download_with_fake_ydl(tmp_path: Path) -> None:
 
 
 def test_worker_main_writes_result(tmp_path: Path, monkeypatch: object) -> None:
-    def fake_run(url: str, dest_dir: Path, ydl_cls: object = None) -> DownloadResult:
+    def fake_run(
+        url: str,
+        dest_dir: Path,
+        ydl_cls: object = None,
+        cookies: object = None,
+    ) -> DownloadResult:
         dest_dir.mkdir(parents=True, exist_ok=True)
         path = dest_dir / "out.bin"
         path.write_bytes(b"x")

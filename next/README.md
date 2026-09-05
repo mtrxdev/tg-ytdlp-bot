@@ -34,3 +34,12 @@ python -m tgytdlp
 ```
 
 `--check` calls official `getMe` and prints `@username`. The long-lived process long-polls `getUpdates`. `/start` sends an inline keyboard. A public URL runs `python -m tgytdlp.worker`. Files go out via `sendDocument` (multipart on `api.telegram.org`, `file://` on a local Bot API server).
+
+YouTube needs a JS runtime and a proof-of-origin token. The worker enables Node (`js_runtimes`) and expects [yt-dlp-ejs](https://github.com/yt-dlp/yt-dlp/wiki/EJS) (pulled in by `yt-dlp[default]`) plus [bgutil-ytdlp-pot-provider](https://github.com/Brainicism/bgutil-ytdlp-pot-provider) on `127.0.0.1:4416`. Age-restricted or locked videos also need a Netscape cookies file (`TG_COOKIES` or `cookies` in `settings.toml`). Never commit that file.
+
+```bash
+# PO token HTTP server (Node >= 20). Keep it running next to the bot.
+git clone --depth 1 --branch 1.3.2 https://github.com/Brainicism/bgutil-ytdlp-pot-provider.git
+cd bgutil-ytdlp-pot-provider/server && npm ci && npx tsc
+node build/main.js
+```

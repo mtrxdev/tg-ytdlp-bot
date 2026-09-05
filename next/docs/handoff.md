@@ -50,6 +50,7 @@ Implemented:
 - URL → job JSON → subprocess worker
 - Isolation tests: chat sources must not import `yt_dlp`
 - `sendDocument` file URI and multipart
+- YouTube: worker sets `js_runtimes=node`; deps are `yt-dlp[default]` (EJS) and `bgutil-ytdlp-pot-provider`. Public extracts need the POT HTTP server on `127.0.0.1:4416`. Optional Netscape file via `TG_COOKIES`.
 
 ## What is blocked
 

@@ -18,7 +18,9 @@ next/
     jobs/                    # JSON job files + subprocess argv
     store/sqlite.py          # offset + job index
     download/send.py         # sendDocument (no yt_dlp)
+    download/errors.py       # user-facing worker errors (no yt_dlp)
     worker/                  # separate process; embeds YoutubeDL
+      opts.py                # Node JS runtime + optional cookiefile
   tests/
 ```
 

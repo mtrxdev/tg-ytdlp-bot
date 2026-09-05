@@ -3,6 +3,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Protocol
 
+from tgytdlp.worker.opts import build_ydl_opts
+
 
 class YoutubeDLLike(Protocol):
     def __enter__(self) -> "YoutubeDLLike": ...
@@ -57,16 +59,11 @@ def run_download(
     dest_dir: Path,
     *,
     ydl_cls: YdlFactory | None = None,
+    cookies: Path | None = None,
 ) -> DownloadResult:
     dest_dir.mkdir(parents=True, exist_ok=True)
     factory = ydl_cls or _default_ydl
-    opts: dict[str, object] = {
-        "outtmpl": str(dest_dir / "%(id)s.%(ext)s"),
-        "quiet": True,
-        "no_warnings": True,
-        "noprogress": True,
-        "restrictfilenames": True,
-    }
+    opts = build_ydl_opts(dest_dir, cookies=cookies)
     with factory(opts) as ydl:
         info = ydl.extract_info(url, download=True)
         if hasattr(ydl, "sanitize_info"):

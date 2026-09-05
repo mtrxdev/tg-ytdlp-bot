@@ -7,3 +7,6 @@ api_base = "https://api.telegram.org"
 data_dir = "data"
 poll_timeout = 25
 worker_timeout = 600
+# Optional Netscape cookies file for age-restricted / locked YouTube.
+# Or set TG_COOKIES. Never commit the file.
+# cookies = "cookies.txt"
