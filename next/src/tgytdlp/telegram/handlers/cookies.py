@@ -17,14 +17,9 @@ from tgytdlp.telegram.rich import cookies_rich, notice_rich
 from tgytdlp.telegram.status import Status, send_status
 
 COOKIES_HELP = (
-    "Some YouTube videos need you to be signed in. You do this once "
-    "inside Telegram — no settings files.\n\n"
-    "1. On your phone or computer, open YouTube in the browser where "
-    "you are already signed in.\n"
-    "2. Install Cookie-Editor or “Get cookies.txt LOCALLY”.\n"
-    "3. Export cookies as a .txt file.\n"
-    "4. Send that file here as a document (paperclip → File). "
-    "Not a screenshot.\n\n"
+    "Cookie-Editor is a computer browser add-on, not a phone app. "
+    "Export the .txt on a computer, then send it here from your phone. "
+    "Android Firefox can install Cookie-Editor; iPhone cannot.\n\n"
     "Then send the same YouTube link again.\n\n"
     "/clear_cookies removes the file I stored for this chat."
 )

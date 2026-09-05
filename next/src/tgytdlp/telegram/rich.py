@@ -57,10 +57,10 @@ def cookies_rich(status: str, help_text: str) -> dict[str, object]:
         paragraph(status),
         numbered_list(
             [
-                "Open YouTube in the browser where you are already signed in.",
-                "Install Cookie-Editor or “Get cookies.txt LOCALLY”.",
+                "On a computer, open YouTube in the browser where you are already signed in.",
+                "Install Cookie-Editor or “Get cookies.txt LOCALLY” in that computer browser. Phone Chrome and Safari cannot install it.",
                 "Export cookies as a .txt file.",
-                "Send that file here (paperclip → File). Not a screenshot.",
+                "Send that file in this chat (paperclip → File). You can send it from your phone. Not a screenshot.",
             ]
         ),
         footer(help_text),
