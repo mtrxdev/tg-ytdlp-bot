@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tgytdlp"
+version = "0.1.0"
+description = "Telegram download bot rewrite (Bot API 10.3)"
+requires-python = ">=3.14.7"
+dependencies = [
+    "requests>=2.32",
+    "yt-dlp",
+]
+
+[project.optional-dependencies]
+dev = ["pytest"]
+
+[project.scripts]
+tgytdlp = "tgytdlp.__main__:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src", "."]

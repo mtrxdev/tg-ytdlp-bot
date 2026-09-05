@@ -191,3 +191,23 @@ yt-dlp
 # configuration-webserver: real cookie files (create them from the *.example templates); never commit secrets
 docker/configuration-webserver/site/cookies/*.txt
 !docker/configuration-webserver/site/cookies/README.txt
+
+# next rewrite: secrets, local state, sessions
+next/.env
+next/settings.toml
+next/data/
+next/*.sqlite
+next/*.sqlite-wal
+next/*.sqlite-shm
+next/*.session
+next/*.session-journal
+next/*.session-shm
+next/*.session-wal
+next/*.session-lock
+
+# repo-wide tests/ is ignored; keep the rewrite suite
+!next/tests/
+!next/tests/**
+!next/.python-version
+next/tests/**/__pycache__/
+next/tests/**/*.pyc
