@@ -2,6 +2,8 @@
 
 Greenfield rewrite. Official [Bot API 10.3](https://core.telegram.org/bots/api) over HTTPS, CPython 3.14.7, yt-dlp in a **separate worker process**. The chat process never imports `yt_dlp`.
 
+**New chat:** read [docs/handoff.md](docs/handoff.md) and [AGENTS.md](AGENTS.md) first.
+
 The old ALLCAPS tree stays the production bot until this rewrite is proven.
 
 ## Secrets — do not put the token in a GitHub file
