@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import argparse
 from pathlib import Path
 
@@ -8,6 +6,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="tgytdlp",
         description="Telegram download bot rewrite",
+        suggest_on_error=True,
     )
     parser.add_argument(
         "--check",

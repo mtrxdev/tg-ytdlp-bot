@@ -2,7 +2,7 @@
 
 Rewrite of the bot in a new tree. The old ALLCAPS layout stays the production process until a slice is ported and proven.
 
-Settings follow the Python 3 standard library: [tomllib](https://docs.python.org/3/library/tomllib.html) for the local file, [os.environ](https://docs.python.org/3/library/os.html#os.environ) to override, [argparse](https://docs.python.org/3/library/argparse.html) for flags, [logging](https://docs.python.org/3/howto/logging.html) for process events.
+Requires [Python 3.14.7](https://www.python.org/downloads/release/python-3147/). Settings follow that release's standard library: [tomllib](https://docs.python.org/3.14/library/tomllib.html) for the local file, [os.environ](https://docs.python.org/3.14/library/os.html#os.environ) to override, [argparse](https://docs.python.org/3.14/library/argparse.html) for flags (`suggest_on_error=True`), [logging](https://docs.python.org/3.14/howto/logging.html) for process events. Annotations use deferred evaluation from [PEP 649](https://docs.python.org/3.14/whatsnew/3.14.html#whatsnew314-pep649). No `from __future__ import annotations`.
 
 ## Names
 
@@ -23,8 +23,9 @@ Fill `api_id`, `api_hash`, and `bot_token` in `next/settings.toml`. That file is
 
 ```bash
 cd next
-python3 -m venv .venv
+python3.14 -m venv .venv
 source .venv/bin/activate
+python --version   # Python 3.14.7
 pip install -e ".[dev]"
 pytest
 python -m tgytdlp --check

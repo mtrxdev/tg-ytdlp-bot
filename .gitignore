@@ -204,5 +204,6 @@ next/*.session-lock
 # repo-wide tests/ is ignored; keep the rewrite suite
 !next/tests/
 !next/tests/**
+!next/.python-version
 next/tests/**/__pycache__/
 next/tests/**/*.pyc
