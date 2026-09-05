@@ -1,27 +1,25 @@
 # next/ tree
 
-Domain packages, not ALLCAPS leftovers. Empty packages are reserved homes from [rename-map.md](rename-map.md). Do not put logic in them until that slice is ported and tested.
-
 ```
 next/
   pyproject.toml
-  settings.toml.example
-  docs/
-    tree.md
-    rename-map.md
+  settings.toml.example      # not the secret; copy locally
   src/tgytdlp/
-    __main__.py              process entry (was magic.py)
-    config/                  Settings from tomllib + os.environ
+    __main__.py              # chat process: getMe / getUpdates
+    config/                  # tomllib + os.environ (token only)
     telegram/
-      client.py              Client factory
-      handlers/              one module per command, no _cmd suffix
-        start.py
-    download/                reserved: yt-dlp / gallery-dl / ffmpeg / send
-    url/                     reserved: URL parse and engine route
-    store/                   reserved: cache and firebase
-    i18n/                    reserved: language packs
-    web/                     reserved: dashboard
+      api.py                 # thin Bot API 10.3 client (requests)
+      client.py              # build_api factory
+      poll.py                # getUpdates long poll
+      handlers/
+        start.py             # /start + inline keyboard
+        callbacks.py
+        urls.py
+    jobs/                    # JSON job files + subprocess argv
+    store/sqlite.py          # offset + job index
+    download/send.py         # sendDocument (no yt_dlp)
+    worker/                  # separate process; embeds YoutubeDL
   tests/
 ```
 
-Secrets live in `next/settings.toml` or process env, never in a Python class, never in chat.
+Reserved empty packages (`url/`, `i18n/`, `web/`) stay unused until a later slice.

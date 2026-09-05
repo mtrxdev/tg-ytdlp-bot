@@ -1,25 +1,24 @@
 # next
 
-Rewrite of the bot in a new tree. The old ALLCAPS layout stays the production process until a slice is ported and proven.
+Greenfield rewrite. Official [Bot API 10.3](https://core.telegram.org/bots/api) over HTTPS, CPython 3.14.7, yt-dlp in a **separate worker process**. The chat process never imports `yt_dlp`.
 
-Requires [Python 3.14.7](https://www.python.org/downloads/release/python-3147/). Settings follow that release's standard library: [tomllib](https://docs.python.org/3.14/library/tomllib.html) for the local file, [os.environ](https://docs.python.org/3.14/library/os.html#os.environ) to override, [argparse](https://docs.python.org/3.14/library/argparse.html) for flags (`suggest_on_error=True`), [logging](https://docs.python.org/3.14/howto/logging.html) for process events. Annotations use deferred evaluation from [PEP 649](https://docs.python.org/3.14/whatsnew/3.14.html#whatsnew314-pep649). No `from __future__ import annotations`.
+The old ALLCAPS tree stays the production bot until this rewrite is proven.
 
-## Names
+## Secrets — do not put the token in a GitHub file
 
-See [docs/tree.md](docs/tree.md) and [docs/rename-map.md](docs/rename-map.md). Files drop `_cmd`, `_hlp`, and shouty directories. One command, one handler module.
+A BotFather token in a tracked file (`settings.toml`, `.env`, `config.py`) is copied into git history the moment you commit or edit it on github.com. Do not do that.
 
-## Telegram keys
+**Where to put `TG_BOT_TOKEN`:**
 
-Do not paste `api_id`, `api_hash`, or `bot_token` in chat.
+1. **This cloud agent:** Cursor environment / agent secret named `TG_BOT_TOKEN`. After it is saved, send another message so the VM can see it.
+2. **GitHub Actions only:** repo **Settings → Secrets and variables → Actions → New repository secret**, name `TG_BOT_TOKEN`. That secret is not a file and is not available in this coding VM.
+3. **Your machine:** copy `settings.toml.example` to `settings.toml` (gitignored) and fill `bot_token`.
 
-Use a dedicated BotFather test bot, not a bot that already has users.
+`api_id` / `api_hash` belong on the local `telegram-bot-api` server binary, not in the bot process.
 
-```bash
-cd next
-cp settings.toml.example settings.toml
-```
+## Run
 
-Fill `api_id`, `api_hash`, and `bot_token` in `next/settings.toml`. That file is gitignored. Process env `TG_API_ID`, `TG_API_HASH`, `TG_BOT_TOKEN`, and `TG_SESSION_NAME` override the file.
+Requires [Python 3.14.7](https://www.python.org/downloads/release/python-3147/).
 
 ```bash
 cd next
@@ -32,8 +31,4 @@ python -m tgytdlp --check
 python -m tgytdlp
 ```
 
-`--check` starts the client, prints the username, and stops. The long-lived process answers `/start` in private chat.
-
-## What is live now
-
-Settings load from TOML and env. The client is built without a global app. `/start` replies. Download, cookies, i18n, and the dashboard are not ported yet.
+`--check` calls official `getMe` and prints `@username`. The long-lived process long-polls `getUpdates`. `/start` sends an inline keyboard. A public URL runs `python -m tgytdlp.worker`. Files go out via `sendDocument` (multipart on `api.telegram.org`, `file://` on a local Bot API server).

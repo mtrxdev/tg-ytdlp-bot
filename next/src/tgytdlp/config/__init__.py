@@ -1,17 +1,18 @@
 import os
 import re
-import tomllib
 from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+import tomllib
 
 _TOKEN_RE = re.compile(r"^\d{6,}:[A-Za-z0-9_-]{20,}$")
+_DEFAULT_API_BASE = "https://api.telegram.org"
 _ENV_KEYS = {
-    "api_id": "TG_API_ID",
-    "api_hash": "TG_API_HASH",
     "bot_token": "TG_BOT_TOKEN",
-    "session_name": "TG_SESSION_NAME",
+    "api_base": "TG_API_BASE",
+    "data_dir": "TG_DATA_DIR",
+    "poll_timeout": "TG_POLL_TIMEOUT",
+    "worker_timeout": "TG_WORKER_TIMEOUT",
 }
 
 
@@ -21,11 +22,25 @@ class SettingsError(ValueError):
 
 @dataclass(frozen=True)
 class Settings:
-    api_id: int
-    api_hash: str
     bot_token: str
-    session_name: str
+    api_base: str
+    data_dir: Path
+    poll_timeout: int
+    worker_timeout: int
     source_path: Path | None
+
+    @property
+    def uses_local_file_uri(self) -> bool:
+        host = self.api_base.lower()
+        return "api.telegram.org" not in host
+
+    def __repr__(self) -> str:
+        return (
+            "Settings("
+            f"bot_token='***', api_base={self.api_base!r}, "
+            f"data_dir={self.data_dir!r}, poll_timeout={self.poll_timeout}, "
+            f"worker_timeout={self.worker_timeout}, source_path={self.source_path!r})"
+        )
 
 
 def _next_root() -> Path:
@@ -46,66 +61,85 @@ def _first_config_file() -> Path | None:
     return None
 
 
-def load_toml(path: Path) -> dict[str, Any]:
+def load_toml(path: Path) -> dict[str, object]:
     with path.open("rb") as handle:
         data = tomllib.load(handle)
     if not isinstance(data, dict):
         raise SettingsError("settings.toml must be a table")
-    return data
+    return {str(key): value for key, value in data.items()}
 
 
 def settings_from_mapping(
     env: Mapping[str, str],
     *,
     source_path: Path | None = None,
+    relative_to: Path | None = None,
 ) -> Settings:
     return settings_from_values(
-        api_id=env.get("TG_API_ID", ""),
-        api_hash=env.get("TG_API_HASH", ""),
         bot_token=env.get("TG_BOT_TOKEN", ""),
-        session_name=env.get("TG_SESSION_NAME", ""),
+        api_base=env.get("TG_API_BASE", ""),
+        data_dir=env.get("TG_DATA_DIR", ""),
+        poll_timeout=env.get("TG_POLL_TIMEOUT", ""),
+        worker_timeout=env.get("TG_WORKER_TIMEOUT", ""),
         source_path=source_path,
+        relative_to=relative_to,
     )
+
+
+def _as_int(value: object, name: str, default: int, *, minimum: int) -> int:
+    if value is None or value == "":
+        return default
+    try:
+        parsed = int(str(value).strip())
+    except ValueError as exc:
+        raise SettingsError(f"{name} must be an integer") from exc
+    if parsed < minimum:
+        raise SettingsError(f"{name} must be >= {minimum}")
+    return parsed
 
 
 def settings_from_values(
     *,
-    api_id: object,
-    api_hash: object,
     bot_token: object,
-    session_name: object,
+    api_base: object = "",
+    data_dir: object = "",
+    poll_timeout: object = "",
+    worker_timeout: object = "",
     source_path: Path | None = None,
+    relative_to: Path | None = None,
 ) -> Settings:
-    raw_id = str(api_id).strip()
-    hash_text = str(api_hash).strip()
     token_text = str(bot_token).strip()
-    session_text = str(session_name).strip() or "tgytdlp"
-
-    if not raw_id.lstrip("-").isdigit():
-        raise SettingsError("api_id must be a positive integer")
-    parsed_id = int(raw_id)
-    if parsed_id <= 0:
-        raise SettingsError("api_id must be a positive integer")
-    if len(hash_text) < 8:
-        raise SettingsError("api_hash is missing or too short")
     if not _TOKEN_RE.match(token_text):
         raise SettingsError("bot_token is not a bot token")
 
+    base = str(api_base).strip() or _DEFAULT_API_BASE
+    if not (base.startswith("http://") or base.startswith("https://")):
+        raise SettingsError("api_base must be an http(s) URL")
+    base = base.rstrip("/")
+
+    raw_dir = str(data_dir).strip() or "data"
+    path = Path(raw_dir)
+    if not path.is_absolute():
+        root = relative_to or (source_path.parent if source_path else Path.cwd())
+        path = (root / path).resolve()
+
     return Settings(
-        api_id=parsed_id,
-        api_hash=hash_text,
         bot_token=token_text,
-        session_name=session_text,
+        api_base=base,
+        data_dir=path,
+        poll_timeout=_as_int(poll_timeout, "poll_timeout", 25, minimum=1),
+        worker_timeout=_as_int(worker_timeout, "worker_timeout", 600, minimum=1),
         source_path=source_path,
     )
 
 
-def _merge(toml_data: Mapping[str, Any], env: Mapping[str, str]) -> dict[str, object]:
+def _merge(toml_data: Mapping[str, object], env: Mapping[str, str]) -> dict[str, object]:
     merged: dict[str, object] = {
-        "api_id": toml_data.get("api_id", ""),
-        "api_hash": toml_data.get("api_hash", ""),
         "bot_token": toml_data.get("bot_token", ""),
-        "session_name": toml_data.get("session_name", ""),
+        "api_base": toml_data.get("api_base", ""),
+        "data_dir": toml_data.get("data_dir", ""),
+        "poll_timeout": toml_data.get("poll_timeout", ""),
+        "worker_timeout": toml_data.get("worker_timeout", ""),
     }
     for field, env_key in _ENV_KEYS.items():
         if env_key in env and env[env_key] != "":
@@ -125,6 +159,7 @@ def load_settings(
         path = config_path
     else:
         path = _first_config_file()
-    toml_data: dict[str, Any] = load_toml(path) if path is not None else {}
+    toml_data: dict[str, object] = load_toml(path) if path is not None else {}
     values = _merge(toml_data, environ)
-    return settings_from_values(source_path=path, **values)
+    relative_to = path.parent if path is not None else Path.cwd()
+    return settings_from_values(source_path=path, relative_to=relative_to, **values)

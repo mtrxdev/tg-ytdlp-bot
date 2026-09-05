@@ -192,9 +192,13 @@ yt-dlp
 docker/configuration-webserver/site/cookies/*.txt
 !docker/configuration-webserver/site/cookies/README.txt
 
-# next rewrite: secrets and pyrogram sessions
+# next rewrite: secrets, local state, sessions
 next/.env
 next/settings.toml
+next/data/
+next/*.sqlite
+next/*.sqlite-wal
+next/*.sqlite-shm
 next/*.session
 next/*.session-journal
 next/*.session-shm

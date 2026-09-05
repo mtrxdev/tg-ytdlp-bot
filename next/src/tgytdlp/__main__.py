@@ -1,13 +1,20 @@
 import logging
-import sys
-
-from pyrogram import idle
 
 from tgytdlp.cli import parse_cli
 from tgytdlp.config import SettingsError, load_settings
-from tgytdlp.telegram import build_client, register_all
+from tgytdlp.store.sqlite import Store
+from tgytdlp.telegram.api import BotAPIError, build_api
+from tgytdlp.telegram.poll import run_forever
 
 logger = logging.getLogger(__name__)
+
+
+def _identity_label(me: dict[str, object]) -> str:
+    username = me.get("username")
+    if isinstance(username, str) and username:
+        return f"@{username}"
+    user_id = me.get("id")
+    return str(user_id)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -22,21 +29,24 @@ def main(argv: list[str] | None = None) -> int:
         logger.error("%s", exc)
         return 2
 
-    app = build_client(settings)
-    if not args.check:
-        register_all(app)
-
-    app.start()
+    settings.data_dir.mkdir(parents=True, exist_ok=True)
+    api = build_api(settings)
     try:
-        me = app.get_me()
-        label = f"@{me.username}" if me.username else str(me.id)
-        print(label)
-        if args.check:
-            return 0
-        logger.info("idle")
-        idle()
+        me = api.get_me()
+    except BotAPIError as exc:
+        logger.error("%s", exc)
+        return 1
+    print(_identity_label(me))
+    if args.check:
+        return 0
+
+    store = Store(settings.data_dir / "bot.sqlite")
+    try:
+        run_forever(api, settings, store)
+    except KeyboardInterrupt:
+        logger.info("stopped")
     finally:
-        app.stop()
+        store.close()
     return 0
 
 

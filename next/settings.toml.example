@@ -1,4 +1,9 @@
-api_id = 0
-api_hash = ""
+# Copy to settings.toml (gitignored). Never put secrets in chat or git.
+# Bot process needs only bot_token. api_id / api_hash belong on the
+# local telegram-bot-api server binary, not here.
+
 bot_token = ""
-session_name = "tgytdlp"
+api_base = "https://api.telegram.org"
+data_dir = "data"
+poll_timeout = 25
+worker_timeout = 600

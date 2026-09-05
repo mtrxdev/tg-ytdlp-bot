@@ -1,12 +1,8 @@
-from pyrogram import Client
-
 from tgytdlp.config import Settings
+from tgytdlp.telegram.api import BotAPI, build_api
+
+__all__ = ["BotAPI", "build_api"]
 
 
-def build_client(settings: Settings) -> Client:
-    return Client(
-        name=settings.session_name,
-        api_id=settings.api_id,
-        api_hash=settings.api_hash,
-        bot_token=settings.bot_token,
-    )
+def build_client(settings: Settings) -> BotAPI:
+    return build_api(settings)
