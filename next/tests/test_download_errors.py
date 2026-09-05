@@ -13,8 +13,16 @@ def test_user_download_error_maps_youtube_bot_check() -> None:
     assert "t1BWMa8btIw" not in message
 
 
-def test_user_download_error_keeps_other_text() -> None:
-    assert user_download_error("no such file") == "no such file"
+def test_user_download_error_hides_unknown_and_empty() -> None:
+    hidden = user_download_error(
+        "yt-dlp produced no file: /data/users/7/cookie.txt SID=secret"
+    )
+    assert "cookie.txt" not in hidden
+    assert "SID=" not in hidden
+    assert "/data/users/" not in hidden
+    assert "1234567890:" not in user_download_error(
+        "Bot API 401: /bot1234567890:AAExampleTokenValue_12-xx/getMe"
+    )
     assert user_download_error(None) == "Download failed."
     assert user_download_error("") == "Download failed."
 

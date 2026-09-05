@@ -46,7 +46,7 @@ def main(argv: list[str] | None = None) -> int:
                 result_path=args.job,
             ),
         )
-        logger.error("download failed: %s", exc)
+        logger.error("download failed")
         return 1
     write_result(
         args.job,

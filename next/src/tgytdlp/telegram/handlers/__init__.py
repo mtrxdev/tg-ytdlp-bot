@@ -35,10 +35,22 @@ def process_update(api: BotAPI, settings: Settings, store: Store, update: Mappin
                     handle_cookies_help(api, settings.data_dir, chat_id, user_id=user_id)
                     return
                 if is_clear_cookies_command(text):
-                    handle_clear_cookies(api, settings.data_dir, chat_id)
+                    handle_clear_cookies(
+                        api,
+                        settings.data_dir,
+                        chat_id,
+                        user_id=user_id,
+                    )
                     return
                 if is_save_as_cookie_command(text):
-                    handle_save_as_cookie(api, settings.data_dir, chat_id, text)
+                    handle_save_as_cookie(
+                        api,
+                        settings.data_dir,
+                        chat_id,
+                        text,
+                        user_id=user_id,
+                        message_id=message_id,
+                    )
                     return
                 url = extract_url(text)
                 if url is not None:
@@ -54,7 +66,13 @@ def process_update(api: BotAPI, settings: Settings, store: Store, update: Mappin
                     return
             document = document_from_message(message)
             if document is not None:
-                handle_cookie_document(api, settings.data_dir, chat_id, document)
+                handle_cookie_document(
+                    api,
+                    settings.data_dir,
+                    chat_id,
+                    document,
+                    user_id=user_id,
+                )
                 return
         return
     query = as_mapping(update.get("callback_query"))

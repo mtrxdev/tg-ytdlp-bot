@@ -41,7 +41,8 @@ class Settings:
             "Settings("
             f"bot_token='***', api_base={self.api_base!r}, "
             f"data_dir={self.data_dir!r}, poll_timeout={self.poll_timeout}, "
-            f"worker_timeout={self.worker_timeout}, cookies={self.cookies!r}, "
+            f"worker_timeout={self.worker_timeout}, "
+            f"cookies={'set' if self.cookies else None}, "
             f"source_path={self.source_path!r})"
         )
 

@@ -69,8 +69,14 @@ def handle_url(
                     runner(job_path, settings.worker_timeout)
 
             wait_for_worker(work, live.pulse)
-        except Exception as exc:
-            store.upsert_job(job_id, chat_id, url, "failed", error=str(exc))
+        except Exception:
+            store.upsert_job(
+                job_id,
+                chat_id,
+                url,
+                "failed",
+                error="The worker did not finish. Try another URL.",
+            )
             live.fail(
                 "Could not finish",
                 "The worker did not finish. Try another URL.",
@@ -78,8 +84,9 @@ def handle_url(
             return
         result = read_result(job_path)
         if not result.ok or result.path is None:
-            store.upsert_job(job_id, chat_id, url, "failed", error=result.error)
-            live.fail("Could not download", user_download_error(result.error))
+            shown = user_download_error(result.error)
+            store.upsert_job(job_id, chat_id, url, "failed", error=shown)
+            live.fail("Could not download", shown)
             return
         store.upsert_job(job_id, chat_id, url, "done", path=str(result.path))
         live.set_step(2)

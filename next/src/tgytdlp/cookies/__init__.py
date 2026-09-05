@@ -57,9 +57,12 @@ def save_user_cookies(data_dir: Path, chat_id: int, data: bytes) -> Path:
         raise ValueError(error)
     dest = user_cookie_path(data_dir, chat_id)
     dest.parent.mkdir(parents=True, exist_ok=True)
+    dest.parent.chmod(0o700)
     tmp = dest.with_name(dest.name + ".tmp")
     tmp.write_bytes(data)
+    tmp.chmod(0o600)
     tmp.replace(dest)
+    dest.chmod(0o600)
     return dest
 
 
