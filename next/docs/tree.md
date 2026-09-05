@@ -11,6 +11,9 @@ next/
       api.py                 # thin Bot API 10.3 client (requests)
       client.py              # build_api factory
       poll.py                # getUpdates long poll
+      ids.py                 # chat / message / ephemeral ids
+      rich.py                # InputRichMessage blocks
+      status.py              # one overlay: send, edit, delete
       handlers/
         start.py             # /start + inline keyboard
         callbacks.py
@@ -18,6 +21,7 @@ next/
         urls.py
     cookies/                 # Netscape validate + per-chat cookie.txt
     jobs/                    # JSON job files + subprocess argv
+      cleanup.py             # dest dir + job JSON after send
     store/sqlite.py          # offset + job index
     download/send.py         # sendDocument (no yt_dlp)
     download/errors.py       # user-facing worker errors (no yt_dlp)

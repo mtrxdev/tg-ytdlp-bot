@@ -105,11 +105,145 @@ class BotAPI:
         text: str,
         *,
         reply_markup: Mapping[str, object] | None = None,
+        reply_parameters: Mapping[str, object] | None = None,
+        link_preview_options: Mapping[str, object] | None = None,
+        ephemeral_message_parameters: Mapping[str, object] | None = None,
+        parse_mode: str | None = None,
     ) -> dict[str, object]:
         payload: dict[str, object] = {"chat_id": chat_id, "text": text}
         if reply_markup is not None:
             payload["reply_markup"] = dict(reply_markup)
+        if reply_parameters is not None:
+            payload["reply_parameters"] = dict(reply_parameters)
+        if link_preview_options is not None:
+            payload["link_preview_options"] = dict(link_preview_options)
+        if ephemeral_message_parameters is not None:
+            payload["ephemeral_message_parameters"] = dict(ephemeral_message_parameters)
+        if parse_mode is not None:
+            payload["parse_mode"] = parse_mode
         return _as_object(self.call("sendMessage", payload), "sendMessage")
+
+    def send_rich_message(
+        self,
+        chat_id: int,
+        rich_message: Mapping[str, object],
+        *,
+        reply_markup: Mapping[str, object] | None = None,
+        reply_parameters: Mapping[str, object] | None = None,
+        ephemeral_message_parameters: Mapping[str, object] | None = None,
+    ) -> dict[str, object]:
+        payload: dict[str, object] = {
+            "chat_id": chat_id,
+            "rich_message": dict(rich_message),
+        }
+        if reply_markup is not None:
+            payload["reply_markup"] = dict(reply_markup)
+        if reply_parameters is not None:
+            payload["reply_parameters"] = dict(reply_parameters)
+        if ephemeral_message_parameters is not None:
+            payload["ephemeral_message_parameters"] = dict(ephemeral_message_parameters)
+        return _as_object(self.call("sendRichMessage", payload), "sendRichMessage")
+
+    def edit_message_text(
+        self,
+        chat_id: int,
+        message_id: int,
+        *,
+        text: str | None = None,
+        rich_message: Mapping[str, object] | None = None,
+        reply_markup: Mapping[str, object] | None = None,
+    ) -> dict[str, object] | bool:
+        payload: dict[str, object] = {"chat_id": chat_id, "message_id": message_id}
+        if text is not None:
+            payload["text"] = text
+        if rich_message is not None:
+            payload["rich_message"] = dict(rich_message)
+        if reply_markup is not None:
+            payload["reply_markup"] = dict(reply_markup)
+        result = self.call("editMessageText", payload)
+        if result is True:
+            return True
+        return _as_object(result, "editMessageText")
+
+    def edit_ephemeral_message_text(
+        self,
+        chat_id: int,
+        receiver_user_id: int,
+        ephemeral_message_id: int,
+        *,
+        text: str | None = None,
+        rich_message: Mapping[str, object] | None = None,
+        reply_markup: Mapping[str, object] | None = None,
+    ) -> bool:
+        payload: dict[str, object] = {
+            "chat_id": chat_id,
+            "receiver_user_id": receiver_user_id,
+            "ephemeral_message_id": ephemeral_message_id,
+        }
+        if text is not None:
+            payload["text"] = text
+        if rich_message is not None:
+            payload["rich_message"] = dict(rich_message)
+        if reply_markup is not None:
+            payload["reply_markup"] = dict(reply_markup)
+        return self.call("editEphemeralMessageText", payload) is True
+
+    def delete_message(self, chat_id: int, message_id: int) -> bool:
+        return (
+            self.call(
+                "deleteMessage",
+                {"chat_id": chat_id, "message_id": message_id},
+            )
+            is True
+        )
+
+    def delete_messages(self, chat_id: int, message_ids: list[int]) -> bool:
+        return (
+            self.call(
+                "deleteMessages",
+                {"chat_id": chat_id, "message_ids": list(message_ids)},
+            )
+            is True
+        )
+
+    def delete_ephemeral_message(
+        self,
+        chat_id: int,
+        receiver_user_id: int,
+        ephemeral_message_id: int,
+    ) -> bool:
+        return (
+            self.call(
+                "deleteEphemeralMessage",
+                {
+                    "chat_id": chat_id,
+                    "receiver_user_id": receiver_user_id,
+                    "ephemeral_message_id": ephemeral_message_id,
+                },
+            )
+            is True
+        )
+
+    def set_message_reaction(
+        self,
+        chat_id: int,
+        message_id: int,
+        emoji: str,
+        *,
+        is_big: bool = False,
+    ) -> bool:
+        return (
+            self.call(
+                "setMessageReaction",
+                {
+                    "chat_id": chat_id,
+                    "message_id": message_id,
+                    "reaction": [{"type": "emoji", "emoji": emoji}],
+                    "is_big": is_big,
+                },
+            )
+            is True
+        )
 
     def answer_callback_query(
         self,
@@ -169,21 +303,20 @@ class BotAPI:
         *,
         use_file_uri: bool,
         filename: str | None = None,
+        reply_parameters: Mapping[str, object] | None = None,
     ) -> dict[str, object]:
+        extra: dict[str, object] = {"chat_id": chat_id}
+        if reply_parameters is not None:
+            extra["reply_parameters"] = dict(reply_parameters)
         if use_file_uri:
-            return _as_object(
-                self.call(
-                    "sendDocument",
-                    {"chat_id": chat_id, "document": path},
-                ),
-                "sendDocument",
-            )
+            extra["document"] = path
+            return _as_object(self.call("sendDocument", extra), "sendDocument")
         name = filename or path.rsplit("/", 1)[-1]
         with open(path, "rb") as handle:
             return _as_object(
                 self.call(
                     "sendDocument",
-                    {"chat_id": chat_id},
+                    extra,
                     files={"document": (name, handle)},
                 ),
                 "sendDocument",

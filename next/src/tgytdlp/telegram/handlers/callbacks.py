@@ -5,12 +5,8 @@ from tgytdlp.download.send import send_document
 from tgytdlp.telegram.api import BotAPI
 from tgytdlp.telegram.handlers.cookies import handle_cookies_help
 from tgytdlp.telegram.handlers.start import handle_how
-
-
-def _as_mapping(value: object) -> Mapping[str, object] | None:
-    if not isinstance(value, dict):
-        return None
-    return {str(key): item for key, item in value.items()}
+from tgytdlp.telegram.ids import as_mapping, chat_id_from_message, int_field, user_id_from
+from tgytdlp.telegram.status import sweep_messages
 
 
 def handle_callback(
@@ -23,20 +19,28 @@ def handle_callback(
 ) -> None:
     query_id = str(query.get("id", ""))
     data = str(query.get("data", ""))
-    message = _as_mapping(query.get("message"))
-    chat: Mapping[str, object] | None = None
-    if message is not None:
-        chat = _as_mapping(message.get("chat"))
-    chat_id = chat.get("id") if chat is not None else None
+    message = as_mapping(query.get("message"))
+    chat_id = chat_id_from_message(message) if message is not None else None
+    user_id = user_id_from(query)
     if query_id:
         api.answer_callback_query(query_id)
     if not isinstance(chat_id, int):
         return
+    if data == "dismiss":
+        mid = int_field(message, "message_id") if message is not None else None
+        sweep_messages(api, chat_id, [mid], private_only=False)
+        return
     if data == "how":
-        handle_how(api, chat_id)
+        handle_how(api, chat_id, user_id=user_id, query_id=query_id or None)
         return
     if data == "cookies":
-        handle_cookies_help(api, data_dir or sample_dir.parent, chat_id)
+        handle_cookies_help(
+            api,
+            data_dir or sample_dir.parent,
+            chat_id,
+            user_id=user_id,
+            query_id=query_id or None,
+        )
         return
     if data == "sample":
         sample_dir.mkdir(parents=True, exist_ok=True)
