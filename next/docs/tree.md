@@ -5,13 +5,13 @@ Domain packages, not ALLCAPS leftovers. Empty packages are reserved homes from [
 ```
 next/
   pyproject.toml
-  .env.example
+  settings.toml.example
   docs/
     tree.md
     rename-map.md
   src/tgytdlp/
     __main__.py              process entry (was magic.py)
-    config/                  env-parsed Settings (was CONFIG/)
+    config/                  Settings from tomllib + os.environ
     telegram/
       client.py              Client factory
       handlers/              one module per command, no _cmd suffix
@@ -24,4 +24,4 @@ next/
   tests/
 ```
 
-Secrets live in `next/.env`, never in a Python class, never in chat.
+Secrets live in `next/settings.toml` or process env, never in a Python class, never in chat.

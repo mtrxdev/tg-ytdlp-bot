@@ -6,8 +6,8 @@ Old tree stays the running bot until a slice is ported, tested, and shown in Tel
 |---|---|
 | `magic.py` | `next/src/tgytdlp/__main__.py` |
 | `HELPERS/app_instance.py` | gone. Pass `Client` in. No global app. |
-| `CONFIG/_config.py` | `next/src/tgytdlp/config/__init__.py` (`Settings` from env) |
-| `CONFIG/config.py` | `next/.env` (gitignored) |
+| `CONFIG/_config.py` | `next/src/tgytdlp/config/__init__.py` (`Settings` from TOML + env) |
+| `CONFIG/config.py` | `next/settings.toml` (gitignored) |
 | `CONFIG/limits.py` | `next/src/tgytdlp/config/limits.py` |
 | `CONFIG/domains.py` | `next/src/tgytdlp/config/domains.py` |
 | `CONFIG/commands.py` | `next/src/tgytdlp/telegram/commands.py` |

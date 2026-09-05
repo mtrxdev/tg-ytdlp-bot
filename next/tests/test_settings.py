@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from tgytdlp.config import SettingsError, settings_from_mapping
+from tgytdlp.config import SettingsError, load_settings, settings_from_mapping
 
 
 def _valid(**overrides: str) -> dict[str, str]:
@@ -17,11 +17,11 @@ def _valid(**overrides: str) -> dict[str, str]:
 
 
 def test_settings_from_mapping_reads_fields() -> None:
-    settings = settings_from_mapping(_valid(), env_path=Path("/tmp/x.env"))
+    settings = settings_from_mapping(_valid(), source_path=Path("/tmp/x.toml"))
     assert settings.api_id == 12345678
     assert settings.api_hash == "0123456789abcdef"
     assert settings.session_name == "probe"
-    assert settings.env_path == Path("/tmp/x.env")
+    assert settings.source_path == Path("/tmp/x.toml")
 
 
 def test_settings_default_session_name() -> None:
@@ -47,3 +47,48 @@ def test_settings_default_session_name() -> None:
 def test_settings_rejects_bad_values(key: str, value: str) -> None:
     with pytest.raises(SettingsError):
         settings_from_mapping(_valid(**{key: value}))
+
+
+def test_load_settings_reads_toml(tmp_path: Path) -> None:
+    path = tmp_path / "settings.toml"
+    path.write_text(
+        "\n".join(
+            [
+                "api_id = 12345678",
+                'api_hash = "0123456789abcdef"',
+                'bot_token = "1234567890:AAExampleTokenValue_12-xx"',
+                'session_name = "from_toml"',
+            ]
+        ),
+        encoding="utf-8",
+    )
+    settings = load_settings({}, config_path=path)
+    assert settings.api_id == 12345678
+    assert settings.session_name == "from_toml"
+    assert settings.source_path == path
+
+
+def test_env_overrides_toml(tmp_path: Path) -> None:
+    path = tmp_path / "settings.toml"
+    path.write_text(
+        "\n".join(
+            [
+                "api_id = 111",
+                'api_hash = "0123456789abcdef"',
+                'bot_token = "1234567890:AAExampleTokenValue_12-xx"',
+                'session_name = "from_toml"',
+            ]
+        ),
+        encoding="utf-8",
+    )
+    settings = load_settings(
+        {"TG_SESSION_NAME": "from_env"},
+        config_path=path,
+    )
+    assert settings.api_id == 111
+    assert settings.session_name == "from_env"
+
+
+def test_missing_explicit_config_raises(tmp_path: Path) -> None:
+    with pytest.raises(SettingsError, match="not found"):
+        load_settings({}, config_path=tmp_path / "missing.toml")

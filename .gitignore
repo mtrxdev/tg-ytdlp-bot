@@ -194,6 +194,7 @@ docker/configuration-webserver/site/cookies/*.txt
 
 # next rewrite: secrets and pyrogram sessions
 next/.env
+next/settings.toml
 next/*.session
 next/*.session-journal
 next/*.session-shm
