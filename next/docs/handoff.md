@@ -39,7 +39,7 @@ Rejected: raw TDLib/MTProto in our process, Rust as the Telegram edge, one PID t
 
 ## What already works (tested)
 
-`cd next && python3.14 -m pytest -q` → **37 passed** (2026-09-05) against a fake Bot API HTTP server.
+`cd next && python3.14 -m pytest -q` → **45 passed** (2026-09-05) against a fake Bot API HTTP server. Live `--check` printed `@mtrxdevbot`.
 
 Implemented:
 
@@ -52,18 +52,17 @@ Implemented:
 - `sendDocument` file URI and multipart
 - YouTube: worker sets `js_runtimes=node`; deps are `yt-dlp[default]` (EJS) and `bgutil-ytdlp-pot-provider`. Public extracts need the POT HTTP server on `127.0.0.1:4416`. Optional Netscape file via `TG_COOKIES`.
 
-## What is blocked
+## Live Telegram
 
-**Live Telegram was never run.** This cloud VM never received `TG_BOT_TOKEN`.
+Live `getMe` from a cloud agent printed `@mtrxdevbot` (2026-09-05). `TG_BOT_TOKEN` is a Cursor **environment** secret (not a GitHub Actions secret and not a repo file). `gh` cannot read secret values.
 
-The user added a GitHub Actions secret named `TG_BOT_TOKEN`. That does **not** appear in a Cursor cloud agent. `gh` cannot read secret values.
+A later agent VM may not have CPython 3.14.7 on PATH. Install if missing (`uv python install 3.14.7` or official tarball `altinstall`), then recreate `next/.venv`.
 
-To live-test `@mtrxdevbot`:
+To continue the live test:
 
-1. Add Cursor **environment** secret `TG_BOT_TOKEN` on the environment link above (not a repo file).
-2. Start a **new** agent run so the secret is in `os.environ`.
-3. `cd next && python -m tgytdlp --check` must print `@mtrxdevbot`.
-4. `python -m tgytdlp`, then the user sends `/start` in Telegram.
+1. Confirm `TG_BOT_TOKEN` is in `os.environ` (check length only; do not print).
+2. `cd next && python -m tgytdlp --check` must print `@mtrxdevbot`.
+3. `python -m tgytdlp` (tmux), then the user sends `/start` in Telegram.
 
 Never paste the token in chat. Never commit `next/settings.toml`. Never log the token or the full `.../bot<token>/...` URL.
 
@@ -71,16 +70,14 @@ Never paste the token in chat. Never commit `next/settings.toml`. Never log the 
 
 ```bash
 cd next
-python3.14 --version    # 3.14.7
-python3.14 -m venv .venv
-source .venv/bin/activate
+python3.14 --version    # 3.14.7; install if missing
+python3.14 -m venv .venv && source .venv/bin/activate
 pip install -e ".[dev]"
 pytest -q
-# only if TG_BOT_TOKEN is in env (check length, do not print):
-python -m tgytdlp --check
+python -m tgytdlp --check   # must print @mtrxdevbot
 ```
 
-If `--check` prints `@mtrxdevbot`, start the poller (tmux) and ask the user to tap `/start`.
+If `--check` prints `@mtrxdevbot`, start the poller (tmux) if it is not already running and ask the user to tap `/start`.
 
 ## After live /start works
 
