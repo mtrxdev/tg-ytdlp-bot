@@ -3,6 +3,7 @@ from pathlib import Path
 
 from tgytdlp.download.send import send_document
 from tgytdlp.telegram.api import BotAPI
+from tgytdlp.telegram.handlers.cookies import handle_cookies_help
 from tgytdlp.telegram.handlers.start import handle_how
 
 
@@ -18,6 +19,7 @@ def handle_callback(
     *,
     sample_dir: Path,
     use_file_uri: bool,
+    data_dir: Path | None = None,
 ) -> None:
     query_id = str(query.get("id", ""))
     data = str(query.get("data", ""))
@@ -32,6 +34,9 @@ def handle_callback(
         return
     if data == "how":
         handle_how(api, chat_id)
+        return
+    if data == "cookies":
+        handle_cookies_help(api, data_dir or sample_dir.parent, chat_id)
         return
     if data == "sample":
         sample_dir.mkdir(parents=True, exist_ok=True)

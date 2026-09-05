@@ -7,6 +7,7 @@ api_base = "https://api.telegram.org"
 data_dir = "data"
 poll_timeout = 25
 worker_timeout = 600
-# Optional Netscape cookies file for age-restricted / locked YouTube.
+# Optional operator-wide Netscape cookies file (fallback).
+# People in Telegram can also send cookie.txt as a document.
 # Or set TG_COOKIES. Never commit the file.
 # cookies = "cookies.txt"

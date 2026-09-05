@@ -14,7 +14,9 @@ next/
       handlers/
         start.py             # /start + inline keyboard
         callbacks.py
+        cookies.py           # /cookies, document cookie.txt, /save_as_cookie
         urls.py
+    cookies/                 # Netscape validate + per-chat cookie.txt
     jobs/                    # JSON job files + subprocess argv
     store/sqlite.py          # offset + job index
     download/send.py         # sendDocument (no yt_dlp)

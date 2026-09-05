@@ -12,6 +12,8 @@ class FakeBotAPI:
         self.calls: list[dict[str, object]] = []
         self._updates: list[dict[str, object]] = []
         self._overrides: dict[str, object] = {}
+        self._file_ids: dict[str, str] = {}
+        self._file_bytes: dict[str, bytes] = {}
         owner = self
 
         class Handler(BaseHTTPRequestHandler):
@@ -20,6 +22,27 @@ class FakeBotAPI:
 
             def log_message(self, _format: str, *_args: object) -> None:
                 return None
+
+            def do_GET(self) -> None:
+                parsed = urlparse(self.path)
+                parts = [part for part in parsed.path.split("/") if part]
+                if len(parts) >= 3 and parts[0] == "file" and parts[1].startswith("bot"):
+                    file_path = "/".join(parts[2:])
+                    data = owner._file_bytes.get(file_path)
+                    if data is None:
+                        self.send_response(404)
+                        self.send_header("Content-Length", "0")
+                        self.end_headers()
+                        return
+                    self.send_response(200)
+                    self.send_header("Content-Type", "application/octet-stream")
+                    self.send_header("Content-Length", str(len(data)))
+                    self.end_headers()
+                    self.wfile.write(data)
+                    return
+                self.send_response(404)
+                self.send_header("Content-Length", "0")
+                self.end_headers()
 
             def do_POST(self) -> None:
                 parsed = urlparse(self.path)
@@ -61,6 +84,27 @@ class FakeBotAPI:
                             "username": "mtrxdevbot",
                         },
                     }
+                elif method == "getFile":
+                    file_id = ""
+                    if isinstance(body, dict):
+                        raw_id = body.get("file_id")
+                        file_id = raw_id if isinstance(raw_id, str) else ""
+                    stored = owner._file_ids.get(file_id)
+                    if stored is None:
+                        payload = {
+                            "ok": False,
+                            "error_code": 400,
+                            "description": "file not found",
+                        }
+                    else:
+                        payload = {
+                            "ok": True,
+                            "result": {
+                                "file_id": file_id,
+                                "file_path": stored,
+                                "file_size": len(owner._file_bytes.get(stored, b"")),
+                            },
+                        }
                 elif method in {
                     "sendMessage",
                     "sendDocument",
@@ -99,3 +143,15 @@ class FakeBotAPI:
 
     def override(self, method: str, payload: Mapping[str, object]) -> None:
         self._overrides[method] = dict(payload)
+
+    def add_document(
+        self,
+        file_id: str,
+        content: bytes,
+        *,
+        file_path: str | None = None,
+    ) -> str:
+        path = file_path or f"documents/{file_id}.txt"
+        self._file_ids[file_id] = path
+        self._file_bytes[path] = content
+        return path

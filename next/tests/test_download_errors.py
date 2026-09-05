@@ -7,8 +7,9 @@ def test_user_download_error_maps_youtube_bot_check() -> None:
         "Use --cookies-from-browser or --cookies for the authentication."
     )
     message = user_download_error(raw)
-    assert "TG_COOKIES" in message
-    assert "4416" in message
+    assert "/cookies" in message
+    assert "cookie.txt" in message
+    assert "TG_COOKIES" not in message
     assert "t1BWMa8btIw" not in message
 
 

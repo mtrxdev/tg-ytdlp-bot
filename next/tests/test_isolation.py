@@ -26,6 +26,7 @@ def test_chat_sources_do_not_import_ytdlp() -> None:
 def test_importing_chat_modules_does_not_load_ytdlp() -> None:
     sys.modules.pop("yt_dlp", None)
     import tgytdlp.config  # noqa: F401
+    import tgytdlp.cookies  # noqa: F401
     import tgytdlp.jobs  # noqa: F401
     import tgytdlp.telegram.api  # noqa: F401
     import tgytdlp.telegram.handlers  # noqa: F401

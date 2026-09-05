@@ -2,6 +2,7 @@ from collections.abc import Callable
 from pathlib import Path
 
 from tgytdlp.config import Settings
+from tgytdlp.cookies import resolve_cookies
 from tgytdlp.download.errors import user_download_error
 from tgytdlp.download.send import send_document
 from tgytdlp.jobs.files import JobSpec, new_job_id, read_result, write_job
@@ -47,8 +48,9 @@ def handle_url(
     api.send_chat_action(chat_id, "upload_document")
     api.send_message(chat_id, "Downloading in a worker process…")
     try:
+        cookies = resolve_cookies(settings.data_dir, chat_id, settings.cookies)
         if runner is default_runner:
-            default_runner(job_path, settings.worker_timeout, cookies=settings.cookies)
+            default_runner(job_path, settings.worker_timeout, cookies=cookies)
         else:
             runner(job_path, settings.worker_timeout)
     except Exception as exc:

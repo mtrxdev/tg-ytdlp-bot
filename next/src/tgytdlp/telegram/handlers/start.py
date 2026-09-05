@@ -5,13 +5,16 @@ from tgytdlp.telegram.api import BotAPI
 START_TEXT = (
     "Send a public http(s) URL and I will fetch it in a separate worker, "
     "then send the file back here.\n\n"
-    "Use a button, or paste a link."
+    "If YouTube asks you to sign in, tap the YouTube button and send a "
+    "login file. Use a button, or paste a link."
 )
 
 HOW_TEXT = (
     "1. Paste an http(s) URL.\n"
     "2. A worker process runs yt-dlp. This chat process never imports it.\n"
-    "3. I send the file with sendDocument."
+    "3. I send the file with sendDocument.\n"
+    "4. If YouTube asks you to sign in, send a cookie.txt document. "
+    "Tap “YouTube sign-in file” for the steps."
 )
 
 
@@ -19,6 +22,7 @@ def start_keyboard() -> dict[str, object]:
     return {
         "inline_keyboard": [
             [{"text": "How it works", "callback_data": "how"}],
+            [{"text": "YouTube sign-in file", "callback_data": "cookies"}],
             [{"text": "Send a sample file", "callback_data": "sample"}],
         ]
     }

@@ -35,7 +35,9 @@ python -m tgytdlp
 
 `--check` calls official `getMe` and prints `@username`. The long-lived process long-polls `getUpdates`. `/start` sends an inline keyboard. A public URL runs `python -m tgytdlp.worker`. Files go out via `sendDocument` (multipart on `api.telegram.org`, `file://` on a local Bot API server).
 
-YouTube needs a JS runtime and a proof-of-origin token. The worker enables Node (`js_runtimes`) and expects [yt-dlp-ejs](https://github.com/yt-dlp/yt-dlp/wiki/EJS) (pulled in by `yt-dlp[default]`) plus [bgutil-ytdlp-pot-provider](https://github.com/Brainicism/bgutil-ytdlp-pot-provider) on `127.0.0.1:4416`. Age-restricted or locked videos also need a Netscape cookies file (`TG_COOKIES` or `cookies` in `settings.toml`). Never commit that file.
+YouTube needs a JS runtime and a proof-of-origin token. The worker enables Node (`js_runtimes`) and expects [yt-dlp-ejs](https://github.com/yt-dlp/yt-dlp/wiki/EJS) (pulled in by `yt-dlp[default]`) plus [bgutil-ytdlp-pot-provider](https://github.com/Brainicism/bgutil-ytdlp-pot-provider) on `127.0.0.1:4416`.
+
+When YouTube still asks for sign-in, a person in Telegram sends a Netscape `cookie.txt` as a document (or `/save_as_cookie`). That file is stored under `data/users/<chat_id>/cookie.txt` and used only for that chat. `/cookies` is the how-to; `/clear_cookies` deletes it. An operator-wide file (`TG_COOKIES` or `cookies` in `settings.toml`) is only the fallback when the chat has not sent one. Never commit cookie files. A Mini App cannot read `youtube.com` cookies.
 
 ```bash
 # PO token HTTP server (Node >= 20). Keep it running next to the bot.

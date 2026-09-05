@@ -57,6 +57,16 @@ def test_send_document_file_uri_and_multipart(fake: FakeBotAPI, tmp_path: Path) 
     assert "multipart" in str(multi["content_type"])
 
 
+def test_get_file_and_download(fake: FakeBotAPI, tmp_path: Path) -> None:
+    payload = b"# Netscape HTTP Cookie File\n"
+    fake.add_document("fileCCC", payload)
+    api = BotAPI(fake.token, fake.base_url)
+    info = api.get_file("fileCCC")
+    dest = tmp_path / "got.txt"
+    api.download_file(str(info["file_path"]), dest, max_bytes=1024)
+    assert dest.read_bytes() == payload
+
+
 def test_error_payload(fake: FakeBotAPI) -> None:
     fake.override("getMe", {"ok": False, "error_code": 401, "description": "Unauthorized"})
     api = BotAPI(fake.token, fake.base_url)

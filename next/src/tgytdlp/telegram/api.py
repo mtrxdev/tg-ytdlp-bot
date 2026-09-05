@@ -1,4 +1,5 @@
 from collections.abc import Mapping
+from pathlib import Path
 from typing import IO
 
 import requests
@@ -125,6 +126,41 @@ class BotAPI:
     def send_chat_action(self, chat_id: int, action: str) -> bool:
         result = self.call("sendChatAction", {"chat_id": chat_id, "action": action})
         return result is True
+
+    def get_file(self, file_id: str) -> dict[str, object]:
+        return _as_object(self.call("getFile", {"file_id": file_id}), "getFile")
+
+    def download_file(self, file_path: str, dest: Path, *, max_bytes: int) -> None:
+        parts = [part for part in file_path.split("/") if part]
+        if not parts or ".." in parts:
+            raise BotAPIError(0, "getFile path is invalid")
+        safe_path = "/".join(parts)
+        url = f"{self._api_base}/file/bot{self._token}/{safe_path}"
+        try:
+            response = self._session.get(url, timeout=self._timeout, stream=True)
+        except requests.RequestException as exc:
+            raise BotAPIError(0, "getFile download failed") from exc
+        if response.status_code != 200:
+            response.close()
+            raise BotAPIError(response.status_code, "getFile download failed")
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        tmp = dest.with_name(dest.name + ".tmp")
+        written = 0
+        try:
+            with tmp.open("wb") as handle:
+                for chunk in response.iter_content(chunk_size=8192):
+                    if not chunk:
+                        continue
+                    written += len(chunk)
+                    if written > max_bytes:
+                        raise BotAPIError(0, "file is too large")
+                    handle.write(chunk)
+            tmp.replace(dest)
+        except Exception:
+            tmp.unlink(missing_ok=True)
+            raise
+        finally:
+            response.close()
 
     def send_document(
         self,

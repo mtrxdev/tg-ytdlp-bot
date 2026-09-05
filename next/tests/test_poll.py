@@ -49,10 +49,27 @@ def test_poll_start_and_sample(tmp_path: Path) -> None:
             }
         )
         poll_once(api, settings, store)
+        fake.push_update(
+            {
+                "update_id": 3,
+                "callback_query": {
+                    "id": "cb2",
+                    "data": "cookies",
+                    "message": {"chat": {"id": 10}},
+                },
+            }
+        )
+        poll_once(api, settings, store)
         methods = [str(call["method"]) for call in fake.calls]
         assert "sendMessage" in methods
         assert "answerCallbackQuery" in methods
         assert "sendDocument" in methods
+        texts = [
+            str(call["body"]["text"])
+            for call in fake.calls
+            if call["method"] == "sendMessage" and isinstance(call["body"], dict)
+        ]
+        assert any("login file" in text or "cookie.txt" in text for text in texts)
     finally:
         fake.stop()
         store.close()
