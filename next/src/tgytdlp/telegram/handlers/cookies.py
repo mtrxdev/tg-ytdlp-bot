@@ -17,9 +17,9 @@ from tgytdlp.telegram.rich import cookies_rich, notice_rich
 from tgytdlp.telegram.status import Status, send_status
 
 COOKIES_HELP = (
-    "Cookie-Editor is a computer browser add-on, not a phone app. "
-    "Export the .txt on a computer, then send it here from your phone. "
-    "Android Firefox can install Cookie-Editor; iPhone cannot.\n\n"
+    "On iPhone you cannot install Cookie-Editor. Safari and Chrome "
+    "have no add-on for that. Export the .txt once on a computer, "
+    "then send it here from your phone (paperclip → File).\n\n"
     "Then send the same YouTube link again.\n\n"
     "/clear_cookies removes the file I stored for this chat."
 )

@@ -99,9 +99,9 @@ def test_process_update_save_as_cookie_and_clear(tmp_path: Path) -> None:
         help_text = last_rich_text(fake.calls)
         assert COOKIES_NONE in help_text
         assert COOKIES_HELP in help_text
-        assert "computer browser" in help_text
-        assert "Phone Chrome and Safari cannot install it" in help_text
-        assert "from your phone" in help_text
+        assert "On iPhone you cannot install Cookie-Editor" in help_text
+        assert "not the iPhone" in help_text
+        assert "paperclip" in help_text
         assert "On your phone or computer" not in help_text
         process_update(
             api,
