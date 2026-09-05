@@ -18,6 +18,16 @@ def build_parser() -> argparse.ArgumentParser:
         type=Path,
         help="TOML settings file (default: settings.toml)",
     )
+    parser.add_argument(
+        "--set-webhook",
+        metavar="URL",
+        help="register a Bot API webhook URL and exit",
+    )
+    parser.add_argument(
+        "--delete-webhook",
+        action="store_true",
+        help="remove the Bot API webhook and exit",
+    )
     return parser
 
 

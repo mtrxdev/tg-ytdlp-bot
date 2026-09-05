@@ -28,6 +28,13 @@ class Store:
             )
             """
         )
+        self._conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS processed_updates (
+                id INTEGER PRIMARY KEY
+            )
+            """
+        )
         self._conn.commit()
 
     def close(self) -> None:
@@ -41,6 +48,17 @@ class Store:
         if row is None:
             return None
         return int(row[0])
+
+    def claim_update(self, update_id: int) -> bool:
+        try:
+            self._conn.execute(
+                "INSERT INTO processed_updates(id) VALUES(?)",
+                (update_id,),
+            )
+            self._conn.commit()
+        except sqlite3.IntegrityError:
+            return False
+        return True
 
     def set_offset(self, offset: int) -> None:
         self._conn.execute(

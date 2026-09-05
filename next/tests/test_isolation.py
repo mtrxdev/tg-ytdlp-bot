@@ -31,6 +31,7 @@ def test_importing_chat_modules_does_not_load_ytdlp() -> None:
     import tgytdlp.telegram.api  # noqa: F401
     import tgytdlp.telegram.handlers  # noqa: F401
     import tgytdlp.telegram.poll  # noqa: F401
+    import tgytdlp.telegram.webhook  # noqa: F401
     import tgytdlp.download.send  # noqa: F401
 
     assert "yt_dlp" not in sys.modules

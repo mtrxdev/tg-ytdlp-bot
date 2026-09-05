@@ -124,8 +124,19 @@ class FakeBotAPI:
                     "deleteEphemeralMessage",
                     "setMessageReaction",
                     "sendRichMessageDraft",
+                    "setWebhook",
+                    "deleteWebhook",
                 }:
                     payload = {"ok": True, "result": True}
+                elif method == "getWebhookInfo":
+                    payload = {
+                        "ok": True,
+                        "result": {
+                            "url": "",
+                            "has_custom_certificate": False,
+                            "pending_update_count": 0,
+                        },
+                    }
                 else:
                     payload = {"ok": False, "error_code": 404, "description": f"unknown {method}"}
                 encoded = json.dumps(payload).encode("utf-8")

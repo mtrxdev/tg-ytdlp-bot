@@ -67,6 +67,22 @@ def test_get_file_and_download(fake: FakeBotAPI, tmp_path: Path) -> None:
     assert dest.read_bytes() == payload
 
 
+def test_set_and_delete_webhook(fake: FakeBotAPI) -> None:
+    api = BotAPI(fake.token, fake.base_url)
+    assert api.set_webhook(
+        "https://example.vercel.app/api/telegram",
+        secret_token="abcDEF123_-",
+    )
+    body = fake.calls[-1]["body"]
+    assert isinstance(body, dict)
+    assert body["url"] == "https://example.vercel.app/api/telegram"
+    assert body["secret_token"] == "abcDEF123_-"
+    assert body["drop_pending_updates"] is True
+    assert api.delete_webhook() is True
+    info = api.get_webhook_info()
+    assert info["pending_update_count"] == 0
+
+
 def test_error_payload(fake: FakeBotAPI) -> None:
     fake.override("getMe", {"ok": False, "error_code": 401, "description": "Unauthorized"})
     api = BotAPI(fake.token, fake.base_url)

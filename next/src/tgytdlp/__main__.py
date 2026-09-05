@@ -5,6 +5,7 @@ from tgytdlp.config import SettingsError, load_settings
 from tgytdlp.store.sqlite import Store
 from tgytdlp.telegram.api import BotAPIError, build_api
 from tgytdlp.telegram.poll import run_forever
+from tgytdlp.telegram.webhook import webhook_secret
 
 logger = logging.getLogger(__name__)
 
@@ -38,6 +39,22 @@ def main(argv: list[str] | None = None) -> int:
         return 1
     print(_identity_label(me))
     if args.check:
+        return 0
+    if args.delete_webhook:
+        try:
+            api.delete_webhook()
+        except BotAPIError as exc:
+            logger.error("%s", exc)
+            return 1
+        print("webhook deleted")
+        return 0
+    if args.set_webhook:
+        try:
+            api.set_webhook(args.set_webhook, secret_token=webhook_secret(settings))
+        except BotAPIError as exc:
+            logger.error("%s", exc)
+            return 1
+        print("webhook set")
         return 0
 
     store = Store(settings.data_dir / "bot.sqlite")
