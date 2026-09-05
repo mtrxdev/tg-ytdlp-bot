@@ -206,6 +206,10 @@ next/*.session-shm
 next/*.session-wal
 next/*.session-lock
 
+# repo-wide cookies/ is ignored; keep the rewrite package
+!next/src/tgytdlp/cookies/
+!next/src/tgytdlp/cookies/*.py
+
 # repo-wide tests/ is ignored; keep the rewrite suite
 !next/tests/
 !next/tests/**

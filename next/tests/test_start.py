@@ -14,7 +14,8 @@ def test_start_keyboard_is_inline() -> None:
     rows = markup["inline_keyboard"]
     assert isinstance(rows, list)
     assert rows[0][0]["callback_data"] == "how"
-    assert rows[1][0]["callback_data"] == "sample"
+    assert rows[1][0]["callback_data"] == "cookies"
+    assert rows[2][0]["callback_data"] == "sample"
 
 
 def test_handle_start_sends_keyboard() -> None:

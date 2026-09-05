@@ -9,9 +9,9 @@ def user_download_error(error: str | None) -> str:
     lowered = text.lower()
     if _BOT_CHECK in lowered and _BOT_CHECK_TAIL in lowered:
         return (
-            "YouTube asked for sign-in (bot check). "
-            "Public videos need Node + yt-dlp-ejs and the PO-token provider "
-            "on 127.0.0.1:4416. Age-restricted or locked videos need a "
-            "Netscape cookies file in TG_COOKIES."
+            "YouTube asked you to sign in.\n\n"
+            "Send me a YouTube login file (cookie.txt) as a document, "
+            "then send this link again.\n\n"
+            "Tap /cookies for the short how-to."
         )
     return text

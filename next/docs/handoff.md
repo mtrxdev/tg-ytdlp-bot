@@ -39,18 +39,18 @@ Rejected: raw TDLib/MTProto in our process, Rust as the Telegram edge, one PID t
 
 ## What already works (tested)
 
-`cd next && python3.14 -m pytest -q` → **45 passed** (2026-09-05) against a fake Bot API HTTP server. Live `--check` printed `@mtrxdevbot`.
+`cd next && python3.14 -m pytest -q` → **52 passed** (2026-09-05) against a fake Bot API HTTP server. Live `--check` printed `@mtrxdevbot`.
 
 Implemented:
 
 - Token-only settings (`TG_BOT_TOKEN`, `TG_API_BASE`, `TG_DATA_DIR`, timeouts)
 - `BotAPI` in `src/tgytdlp/telegram/api.py`
 - `--check` → official `getMe`, prints `@username`
-- Long-poll loop, `/start` inline keyboard (`how`, `sample`)
+- Long-poll loop, `/start` inline keyboard (`how`, `cookies`, `sample`)
 - URL → job JSON → subprocess worker
 - Isolation tests: chat sources must not import `yt_dlp`
 - `sendDocument` file URI and multipart
-- YouTube: worker sets `js_runtimes=node`; deps are `yt-dlp[default]` (EJS) and `bgutil-ytdlp-pot-provider`. Public extracts need the POT HTTP server on `127.0.0.1:4416`. Optional Netscape file via `TG_COOKIES`.
+- YouTube: worker sets `js_runtimes=node`; deps are `yt-dlp[default]` (EJS) and `bgutil-ytdlp-pot-provider`. Public extracts need the POT HTTP server on `127.0.0.1:4416`. Locked videos: user sends Netscape `cookie.txt` as a Telegram document (or `/save_as_cookie`). Stored at `data/users/<chat_id>/cookie.txt`. Operator `TG_COOKIES` is fallback only. Mini App Google login cannot supply those cookies.
 
 ## Live Telegram
 
