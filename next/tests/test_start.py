@@ -1,6 +1,7 @@
 from tgytdlp.telegram.api import BotAPI
 from tgytdlp.telegram.handlers.start import START_TEXT, handle_start, is_start_command, start_keyboard
 from tests.support.botapi import FakeBotAPI
+from tests.support.rich import flatten_rich
 
 
 def test_start_command_names() -> None:
@@ -27,10 +28,12 @@ def test_handle_start_sends_keyboard() -> None:
     finally:
         fake.stop()
     send = fake.calls[-1]
-    assert send["method"] == "sendMessage"
+    assert send["method"] == "sendRichMessage"
     body = send["body"]
     assert isinstance(body, dict)
-    assert body["text"] == START_TEXT
+    rich = body["rich_message"]
+    assert isinstance(rich, dict)
+    assert START_TEXT in flatten_rich(rich)
     markup = body["reply_markup"]
     assert isinstance(markup, dict)
     assert "inline_keyboard" in markup

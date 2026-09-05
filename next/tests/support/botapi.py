@@ -14,6 +14,7 @@ class FakeBotAPI:
         self._overrides: dict[str, object] = {}
         self._file_ids: dict[str, str] = {}
         self._file_bytes: dict[str, bytes] = {}
+        self._next_message_id = 1
         owner = self
 
         class Handler(BaseHTTPRequestHandler):
@@ -107,11 +108,24 @@ class FakeBotAPI:
                         }
                 elif method in {
                     "sendMessage",
+                    "sendRichMessage",
                     "sendDocument",
+                }:
+                    mid = owner._next_message_id
+                    owner._next_message_id += 1
+                    payload = {"ok": True, "result": {"message_id": mid}}
+                elif method in {
                     "answerCallbackQuery",
                     "sendChatAction",
+                    "editMessageText",
+                    "editEphemeralMessageText",
+                    "deleteMessage",
+                    "deleteMessages",
+                    "deleteEphemeralMessage",
+                    "setMessageReaction",
+                    "sendRichMessageDraft",
                 }:
-                    payload = {"ok": True, "result": True if method != "sendMessage" and method != "sendDocument" else {"message_id": 1}}
+                    payload = {"ok": True, "result": True}
                 else:
                     payload = {"ok": False, "error_code": 404, "description": f"unknown {method}"}
                 encoded = json.dumps(payload).encode("utf-8")

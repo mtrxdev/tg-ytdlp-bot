@@ -1,6 +1,6 @@
-from collections.abc import Mapping
-
 from tgytdlp.telegram.api import BotAPI
+from tgytdlp.telegram.rich import how_rich, start_rich
+from tgytdlp.telegram.status import Status, send_status
 
 START_TEXT = (
     "Send a public http(s) URL and I will fetch it in a separate worker, "
@@ -10,9 +10,9 @@ START_TEXT = (
 )
 
 HOW_TEXT = (
-    "1. Paste an http(s) URL.\n"
-    "2. A worker process runs yt-dlp. This chat process never imports it.\n"
-    "3. I send the file with sendDocument.\n"
+    "1. Paste an http(s) URL. I react to that message.\n"
+    "2. Telegram shows the bot uploading a file. A short draft lists the steps.\n"
+    "3. The file arrives as a reply. The draft goes away. No leftover wait line.\n"
     "4. If YouTube asks you to sign in, send a cookie.txt document. "
     "Tap “YouTube sign-in file” for the steps."
 )
@@ -34,22 +34,25 @@ def is_start_command(text: str) -> bool:
 
 
 def handle_start(api: BotAPI, chat_id: int) -> dict[str, object]:
-    return api.send_message(chat_id, START_TEXT, reply_markup=start_keyboard())
+    return api.send_rich_message(
+        chat_id,
+        start_rich(START_TEXT),
+        reply_markup=start_keyboard(),
+    )
 
 
-def handle_how(api: BotAPI, chat_id: int) -> dict[str, object]:
-    return api.send_message(chat_id, HOW_TEXT)
-
-
-def _as_mapping(value: object) -> Mapping[str, object] | None:
-    if not isinstance(value, dict):
-        return None
-    return {str(key): item for key, item in value.items()}
-
-
-def chat_id_from_message(message: Mapping[str, object]) -> int | None:
-    chat = _as_mapping(message.get("chat"))
-    if chat is None:
-        return None
-    raw = chat.get("id")
-    return raw if isinstance(raw, int) else None
+def handle_how(
+    api: BotAPI,
+    chat_id: int,
+    *,
+    user_id: int | None = None,
+    query_id: str | None = None,
+) -> Status:
+    return send_status(
+        api,
+        chat_id,
+        how_rich(HOW_TEXT),
+        user_id=user_id,
+        query_id=query_id,
+        dismissable=True,
+    )

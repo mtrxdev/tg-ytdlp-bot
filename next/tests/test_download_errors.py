@@ -17,3 +17,17 @@ def test_user_download_error_keeps_other_text() -> None:
     assert user_download_error("no such file") == "no such file"
     assert user_download_error(None) == "Download failed."
     assert user_download_error("") == "Download failed."
+
+
+def test_user_download_error_hides_ytdlp_cli() -> None:
+    raw = (
+        "ERROR: [generic] Got HTTP Error 403 caused by Cloudflare anti-bot "
+        "challenge; see https://github.com/yt-dlp/yt-dlp#impersonation "
+        'for how to install the required impersonation dependency, and try '
+        'again with --extractor-args "generic:impersonate"'
+    )
+    message = user_download_error(raw)
+    assert "Cloudflare" not in message
+    assert "ERROR:" not in message
+    assert "--extractor-args" not in message
+    assert "blocked" in message.lower()

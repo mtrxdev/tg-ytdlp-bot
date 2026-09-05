@@ -5,10 +5,12 @@ from tgytdlp.config import Settings
 from tgytdlp.cookies import resolve_cookies
 from tgytdlp.download.errors import user_download_error
 from tgytdlp.download.send import send_document
+from tgytdlp.jobs.cleanup import cleanup_job_workspace
 from tgytdlp.jobs.files import JobSpec, new_job_id, read_result, write_job
 from tgytdlp.jobs.spawn import run_job_process
 from tgytdlp.store.sqlite import Store
 from tgytdlp.telegram.api import BotAPI
+from tgytdlp.telegram.progress import JobLive, wait_for_worker
 
 JobRunner = Callable[[Path, int], None]
 
@@ -32,6 +34,8 @@ def handle_url(
     url: str,
     *,
     runner: JobRunner = default_runner,
+    user_id: int | None = None,
+    message_id: int | None = None,
 ) -> None:
     job_id = new_job_id()
     dest_dir = settings.data_dir / "files" / job_id
@@ -45,27 +49,47 @@ def handle_url(
     )
     write_job(job_path, spec)
     store.upsert_job(job_id, chat_id, url, "queued")
-    api.send_chat_action(chat_id, "upload_document")
-    api.send_message(chat_id, "Downloading in a worker process…")
-    try:
-        cookies = resolve_cookies(settings.data_dir, chat_id, settings.cookies)
-        if runner is default_runner:
-            default_runner(job_path, settings.worker_timeout, cookies=cookies)
-        else:
-            runner(job_path, settings.worker_timeout)
-    except Exception as exc:
-        store.upsert_job(job_id, chat_id, url, "failed", error=str(exc))
-        api.send_message(chat_id, "The worker did not finish. Try another URL.")
-        return
-    result = read_result(job_path)
-    if not result.ok or result.path is None:
-        store.upsert_job(job_id, chat_id, url, "failed", error=result.error)
-        api.send_message(chat_id, user_download_error(result.error))
-        return
-    store.upsert_job(job_id, chat_id, url, "done", path=str(result.path))
-    send_document(
+    live = JobLive(
         api,
         chat_id,
-        result.path,
-        use_file_uri=settings.uses_local_file_uri,
+        job_id,
+        url,
+        message_id=message_id,
+        user_id=user_id,
     )
+    live.start()
+    try:
+        try:
+            cookies = resolve_cookies(settings.data_dir, chat_id, settings.cookies)
+
+            def work() -> None:
+                if runner is default_runner:
+                    default_runner(job_path, settings.worker_timeout, cookies=cookies)
+                else:
+                    runner(job_path, settings.worker_timeout)
+
+            wait_for_worker(work, live.pulse)
+        except Exception as exc:
+            store.upsert_job(job_id, chat_id, url, "failed", error=str(exc))
+            live.fail(
+                "Could not finish",
+                "The worker did not finish. Try another URL.",
+            )
+            return
+        result = read_result(job_path)
+        if not result.ok or result.path is None:
+            store.upsert_job(job_id, chat_id, url, "failed", error=result.error)
+            live.fail("Could not download", user_download_error(result.error))
+            return
+        store.upsert_job(job_id, chat_id, url, "done", path=str(result.path))
+        live.set_step(2)
+        send_document(
+            api,
+            chat_id,
+            result.path,
+            use_file_uri=settings.uses_local_file_uri,
+            reply_to=message_id,
+        )
+        live.succeed()
+    finally:
+        cleanup_job_workspace(spec)

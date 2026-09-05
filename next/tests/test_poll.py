@@ -1,13 +1,15 @@
 from pathlib import Path
+from tempfile import TemporaryDirectory
 
 from tgytdlp.config import settings_from_mapping
-from tgytdlp.jobs.files import ResultSpec, write_result
+from tgytdlp.jobs.files import ResultSpec, read_job, write_result
 from tgytdlp.store.sqlite import Store
 from tgytdlp.telegram.api import BotAPI
 from tgytdlp.telegram.handlers import process_update
 from tgytdlp.telegram.handlers.urls import handle_url
 from tgytdlp.telegram.poll import poll_once
 from tests.support.botapi import FakeBotAPI
+from tests.support.rich import last_rich_text
 
 
 def _settings(tmp_path: Path, base: str) -> object:
@@ -61,15 +63,11 @@ def test_poll_start_and_sample(tmp_path: Path) -> None:
         )
         poll_once(api, settings, store)
         methods = [str(call["method"]) for call in fake.calls]
-        assert "sendMessage" in methods
+        assert "sendRichMessage" in methods
         assert "answerCallbackQuery" in methods
         assert "sendDocument" in methods
-        texts = [
-            str(call["body"]["text"])
-            for call in fake.calls
-            if call["method"] == "sendMessage" and isinstance(call["body"], dict)
-        ]
-        assert any("login file" in text or "cookie.txt" in text for text in texts)
+        text = last_rich_text(fake.calls)
+        assert "login file" in text or "cookie.txt" in text
     finally:
         fake.stop()
         store.close()
@@ -85,13 +83,14 @@ def test_handle_url_sends_worker_file(tmp_path: Path) -> None:
         api = BotAPI(fake.token, fake.base_url, timeout=5)
 
         def runner(job_path: Path, timeout: int) -> None:
-            dest = settings.data_dir / "files" / "forced.bin"
+            spec = read_job(job_path)
+            dest = spec.dest_dir / "forced.bin"
             dest.parent.mkdir(parents=True, exist_ok=True)
             dest.write_bytes(b"ok")
             write_result(
                 job_path,
                 ResultSpec(
-                    job_id="x",
+                    job_id=spec.job_id,
                     ok=True,
                     path=dest,
                     title="forced",
@@ -107,10 +106,17 @@ def test_handle_url_sends_worker_file(tmp_path: Path) -> None:
             10,
             "https://example.com/v",
             runner=runner,
+            message_id=88,
         )
         methods = [str(call["method"]) for call in fake.calls]
         assert "sendChatAction" in methods
+        assert "sendRichMessageDraft" in methods
+        assert "setMessageReaction" in methods
         assert "sendDocument" in methods
+        assert "sendRichMessage" not in methods
+        files_root = settings.data_dir / "files"
+        leftovers = list(files_root.rglob("*")) if files_root.exists() else []
+        assert leftovers == []
     finally:
         fake.stop()
         store.close()
@@ -120,8 +126,6 @@ def test_process_update_start() -> None:
     fake = FakeBotAPI("1234567890:AAExampleTokenValue_12-xx")
     fake.start()
     try:
-        from tempfile import TemporaryDirectory
-
         with TemporaryDirectory() as raw:
             tmp_path = Path(raw)
             settings = _settings(tmp_path, fake.base_url)
@@ -134,6 +138,6 @@ def test_process_update_start() -> None:
                 {"message": {"chat": {"id": 3}, "text": "/start@mtrxdevbot"}},
             )
             store.close()
-        assert fake.calls[-1]["method"] == "sendMessage"
+        assert fake.calls[-1]["method"] == "sendRichMessage"
     finally:
         fake.stop()

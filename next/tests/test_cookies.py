@@ -29,6 +29,7 @@ from tgytdlp.telegram.handlers.cookies import (
     is_save_as_cookie_command,
 )
 from tests.support.botapi import FakeBotAPI
+from tests.support.rich import last_rich_text
 
 VALID = f"{NETSCAPE_MARK}\n.youtube.com\tTRUE\t/\tTRUE\t0\tSID\tx\n"
 
@@ -91,10 +92,9 @@ def test_process_update_save_as_cookie_and_clear(tmp_path: Path) -> None:
             store,
             {"message": {"chat": {"id": 11}, "text": "/cookies"}},
         )
-        help_body = fake.calls[-1]["body"]
-        assert isinstance(help_body, dict)
-        assert COOKIES_NONE in str(help_body["text"])
-        assert COOKIES_HELP in str(help_body["text"])
+        help_text = last_rich_text(fake.calls)
+        assert COOKIES_NONE in help_text
+        assert COOKIES_HELP in help_text
         process_update(
             api,
             settings,
@@ -107,27 +107,21 @@ def test_process_update_save_as_cookie_and_clear(tmp_path: Path) -> None:
             },
         )
         assert cookies_for_chat(settings.data_dir, 11) is not None
-        saved_body = fake.calls[-1]["body"]
-        assert isinstance(saved_body, dict)
-        assert saved_body["text"] == COOKIES_SAVED
+        assert COOKIES_SAVED in last_rich_text(fake.calls)
         process_update(
             api,
             settings,
             store,
             {"message": {"chat": {"id": 11}, "text": "/cookies"}},
         )
-        have_body = fake.calls[-1]["body"]
-        assert isinstance(have_body, dict)
-        assert COOKIES_HAVE in str(have_body["text"])
+        assert COOKIES_HAVE in last_rich_text(fake.calls)
         process_update(
             api,
             settings,
             store,
             {"message": {"chat": {"id": 11}, "text": "/clear_cookies"}},
         )
-        clear_body = fake.calls[-1]["body"]
-        assert isinstance(clear_body, dict)
-        assert clear_body["text"] == COOKIES_CLEARED
+        assert COOKIES_CLEARED in last_rich_text(fake.calls)
         store.close()
     finally:
         fake.stop()
@@ -161,9 +155,7 @@ def test_process_update_cookie_document(tmp_path: Path) -> None:
         assert path.read_text(encoding="utf-8") == VALID
         methods = [str(call["method"]) for call in fake.calls]
         assert "getFile" in methods
-        body = fake.calls[-1]["body"]
-        assert isinstance(body, dict)
-        assert body["text"] == COOKIES_SAVED
+        assert COOKIES_SAVED in last_rich_text(fake.calls)
         store.close()
     finally:
         fake.stop()
@@ -191,9 +183,7 @@ def test_process_update_rejects_non_txt_document(tmp_path: Path) -> None:
                 }
             },
         )
-        body = fake.calls[-1]["body"]
-        assert isinstance(body, dict)
-        assert body["text"] == NOT_TXT
+        assert NOT_TXT in last_rich_text(fake.calls)
         assert cookies_for_chat(settings.data_dir, 22) is None
         store.close()
     finally:
