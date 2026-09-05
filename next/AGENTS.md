@@ -7,4 +7,4 @@ New chat: start at [docs/handoff.md](docs/handoff.md).
 - Chat process must never import `yt_dlp`. Tests in `tests/test_isolation.py` enforce this.
 - Never commit `next/settings.toml`. Never paste `TG_BOT_TOKEN` in chat. GitHub Actions secrets are not visible to Cursor cloud VMs.
 - Test bot username: `@mtrxdevbot`. Live `getMe` from an agent printed `@mtrxdevbot` (2026-09-05).
-- Official docs only for Telegram and CPython 3.14.
+- Official docs only for Telegram and CPython 3.14. YouTube: Node + yt-dlp-ejs + bgutil POT on :4416; cookies only for locked videos.

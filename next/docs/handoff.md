@@ -39,7 +39,7 @@ Rejected: raw TDLib/MTProto in our process, Rust as the Telegram edge, one PID t
 
 ## What already works (tested)
 
-`cd next && python3.14 -m pytest -q` → **37 passed** (2026-09-05) against a fake Bot API HTTP server. Live `--check` printed `@mtrxdevbot`.
+`cd next && python3.14 -m pytest -q` → **45 passed** (2026-09-05) against a fake Bot API HTTP server. Live `--check` printed `@mtrxdevbot`.
 
 Implemented:
 
@@ -50,6 +50,7 @@ Implemented:
 - URL → job JSON → subprocess worker
 - Isolation tests: chat sources must not import `yt_dlp`
 - `sendDocument` file URI and multipart
+- YouTube: worker sets `js_runtimes=node`; deps are `yt-dlp[default]` (EJS) and `bgutil-ytdlp-pot-provider`. Public extracts need the POT HTTP server on `127.0.0.1:4416`. Optional Netscape file via `TG_COOKIES`.
 
 ## Live Telegram
 

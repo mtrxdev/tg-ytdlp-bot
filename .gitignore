@@ -195,6 +195,7 @@ docker/configuration-webserver/site/cookies/*.txt
 # next rewrite: secrets, local state, sessions
 next/.env
 next/settings.toml
+next/cookies.txt
 next/data/
 next/*.sqlite
 next/*.sqlite-wal

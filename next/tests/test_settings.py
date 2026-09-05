@@ -39,6 +39,7 @@ def test_settings_defaults(tmp_path: Path) -> None:
     assert settings.data_dir == (tmp_path / "data").resolve()
     assert settings.poll_timeout == 25
     assert settings.uses_local_file_uri is False
+    assert settings.cookies is None
 
 
 def test_local_api_base_uses_file_uri() -> None:
@@ -97,6 +98,16 @@ def test_env_overrides_toml(tmp_path: Path) -> None:
         config_path=path,
     )
     assert settings.api_base == "http://127.0.0.1:9"
+
+
+def test_settings_reads_cookies_path(tmp_path: Path) -> None:
+    cookies = tmp_path / "cookies.txt"
+    cookies.write_text("# Netscape HTTP Cookie File\n", encoding="utf-8")
+    settings = settings_from_mapping(
+        _valid(TG_COOKIES=str(cookies)),
+        relative_to=tmp_path,
+    )
+    assert settings.cookies == cookies
 
 
 def test_missing_explicit_config_raises(tmp_path: Path) -> None:

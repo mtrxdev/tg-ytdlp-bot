@@ -13,6 +13,7 @@ _ENV_KEYS = {
     "data_dir": "TG_DATA_DIR",
     "poll_timeout": "TG_POLL_TIMEOUT",
     "worker_timeout": "TG_WORKER_TIMEOUT",
+    "cookies": "TG_COOKIES",
 }
 
 
@@ -27,6 +28,7 @@ class Settings:
     data_dir: Path
     poll_timeout: int
     worker_timeout: int
+    cookies: Path | None
     source_path: Path | None
 
     @property
@@ -39,7 +41,8 @@ class Settings:
             "Settings("
             f"bot_token='***', api_base={self.api_base!r}, "
             f"data_dir={self.data_dir!r}, poll_timeout={self.poll_timeout}, "
-            f"worker_timeout={self.worker_timeout}, source_path={self.source_path!r})"
+            f"worker_timeout={self.worker_timeout}, cookies={self.cookies!r}, "
+            f"source_path={self.source_path!r})"
         )
 
 
@@ -81,6 +84,7 @@ def settings_from_mapping(
         data_dir=env.get("TG_DATA_DIR", ""),
         poll_timeout=env.get("TG_POLL_TIMEOUT", ""),
         worker_timeout=env.get("TG_WORKER_TIMEOUT", ""),
+        cookies=env.get("TG_COOKIES", ""),
         source_path=source_path,
         relative_to=relative_to,
     )
@@ -105,6 +109,7 @@ def settings_from_values(
     data_dir: object = "",
     poll_timeout: object = "",
     worker_timeout: object = "",
+    cookies: object = "",
     source_path: Path | None = None,
     relative_to: Path | None = None,
 ) -> Settings:
@@ -123,12 +128,21 @@ def settings_from_values(
         root = relative_to or (source_path.parent if source_path else Path.cwd())
         path = (root / path).resolve()
 
+    cookie_text = str(cookies).strip()
+    cookie_path: Path | None = None
+    if cookie_text:
+        cookie_path = Path(cookie_text)
+        if not cookie_path.is_absolute():
+            root = relative_to or (source_path.parent if source_path else Path.cwd())
+            cookie_path = (root / cookie_path).resolve()
+
     return Settings(
         bot_token=token_text,
         api_base=base,
         data_dir=path,
         poll_timeout=_as_int(poll_timeout, "poll_timeout", 25, minimum=1),
         worker_timeout=_as_int(worker_timeout, "worker_timeout", 600, minimum=1),
+        cookies=cookie_path,
         source_path=source_path,
     )
 
@@ -140,6 +154,7 @@ def _merge(toml_data: Mapping[str, object], env: Mapping[str, str]) -> dict[str,
         "data_dir": toml_data.get("data_dir", ""),
         "poll_timeout": toml_data.get("poll_timeout", ""),
         "worker_timeout": toml_data.get("worker_timeout", ""),
+        "cookies": toml_data.get("cookies", ""),
     }
     for field, env_key in _ENV_KEYS.items():
         if env_key in env and env[env_key] != "":

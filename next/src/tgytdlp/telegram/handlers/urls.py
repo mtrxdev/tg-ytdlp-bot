@@ -2,6 +2,7 @@ from collections.abc import Callable
 from pathlib import Path
 
 from tgytdlp.config import Settings
+from tgytdlp.download.errors import user_download_error
 from tgytdlp.download.send import send_document
 from tgytdlp.jobs.files import JobSpec, new_job_id, read_result, write_job
 from tgytdlp.jobs.spawn import run_job_process
@@ -18,8 +19,8 @@ def extract_url(text: str) -> str | None:
     return None
 
 
-def default_runner(job_path: Path, timeout: int) -> None:
-    run_job_process(job_path, timeout=timeout)
+def default_runner(job_path: Path, timeout: int, *, cookies: Path | None = None) -> None:
+    run_job_process(job_path, timeout=timeout, cookies=cookies)
 
 
 def handle_url(
@@ -46,7 +47,10 @@ def handle_url(
     api.send_chat_action(chat_id, "upload_document")
     api.send_message(chat_id, "Downloading in a worker process…")
     try:
-        runner(job_path, settings.worker_timeout)
+        if runner is default_runner:
+            default_runner(job_path, settings.worker_timeout, cookies=settings.cookies)
+        else:
+            runner(job_path, settings.worker_timeout)
     except Exception as exc:
         store.upsert_job(job_id, chat_id, url, "failed", error=str(exc))
         api.send_message(chat_id, "The worker did not finish. Try another URL.")
@@ -54,7 +58,7 @@ def handle_url(
     result = read_result(job_path)
     if not result.ok or result.path is None:
         store.upsert_job(job_id, chat_id, url, "failed", error=result.error)
-        api.send_message(chat_id, result.error or "Download failed.")
+        api.send_message(chat_id, user_download_error(result.error))
         return
     store.upsert_job(job_id, chat_id, url, "done", path=str(result.path))
     send_document(

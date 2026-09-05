@@ -9,7 +9,8 @@ description = "Telegram download bot rewrite (Bot API 10.3)"
 requires-python = ">=3.14.7"
 dependencies = [
     "requests>=2.32",
-    "yt-dlp",
+    "yt-dlp[default]",
+    "bgutil-ytdlp-pot-provider",
 ]
 
 [project.optional-dependencies]

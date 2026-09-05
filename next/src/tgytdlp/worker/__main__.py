@@ -4,6 +4,7 @@ from pathlib import Path
 
 from tgytdlp.jobs.files import JobError, read_job, write_result
 from tgytdlp.jobs.files import ResultSpec
+from tgytdlp.worker.opts import cookiefile_from_env
 from tgytdlp.worker.ytdlp import run_download
 
 logger = logging.getLogger(__name__)
@@ -28,7 +29,11 @@ def main(argv: list[str] | None = None) -> int:
         logger.error("%s", exc)
         return 2
     try:
-        downloaded = run_download(job.url, job.dest_dir)
+        downloaded = run_download(
+            job.url,
+            job.dest_dir,
+            cookies=cookiefile_from_env(),
+        )
     except Exception as exc:
         write_result(
             args.job,
