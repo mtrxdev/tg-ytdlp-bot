@@ -1,0 +1,11 @@
+.venv
+data
+docs
+tests
+**/*.pyc
+**/__pycache__
+settings.toml
+cookies.txt
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm

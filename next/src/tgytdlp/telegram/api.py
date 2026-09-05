@@ -81,6 +81,36 @@ class BotAPI:
     def get_me(self) -> dict[str, object]:
         return _as_object(self.call("getMe"), "getMe")
 
+    def set_webhook(
+        self,
+        url: str,
+        *,
+        secret_token: str,
+        drop_pending_updates: bool = True,
+        allowed_updates: list[str] | None = None,
+    ) -> bool:
+        payload: dict[str, object] = {
+            "url": url,
+            "secret_token": secret_token,
+            "drop_pending_updates": drop_pending_updates,
+            "allowed_updates": allowed_updates
+            if allowed_updates is not None
+            else ["message", "callback_query"],
+        }
+        return self.call("setWebhook", payload) is True
+
+    def delete_webhook(self, *, drop_pending_updates: bool = False) -> bool:
+        return (
+            self.call(
+                "deleteWebhook",
+                {"drop_pending_updates": drop_pending_updates},
+            )
+            is True
+        )
+
+    def get_webhook_info(self) -> dict[str, object]:
+        return _as_object(self.call("getWebhookInfo"), "getWebhookInfo")
+
     def get_updates(
         self,
         *,
