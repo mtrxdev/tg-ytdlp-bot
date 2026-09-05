@@ -12,6 +12,7 @@ from tgytdlp.cookies import (
     validate_cookie_bytes,
 )
 from tgytdlp.telegram.api import BotAPI, BotAPIError
+from tgytdlp.telegram.ids import is_private_chat
 from tgytdlp.telegram.rich import cookies_rich, notice_rich
 from tgytdlp.telegram.status import Status, send_status
 
@@ -31,12 +32,20 @@ COOKIES_SAVED = (
     "Saved. Send the YouTube link again. "
     "I will use this login file only for this chat."
 )
+COOKIES_SAVED_PASTE = (
+    "Saved. Send the YouTube link again. "
+    "If your paste is still in this chat, delete that message."
+)
 COOKIES_CLEARED = "Removed the login file for this chat."
 COOKIES_NONE = "I do not have a login file for this chat."
 COOKIES_HAVE = "I already have a login file for this chat."
+COOKIES_PRIVATE_ONLY = (
+    "Send the login file in a private chat with me. "
+    "Do not post cookies in a group."
+)
 SAVE_AS_HINT = (
-    "Paste the cookie.txt text after the command, or send the .txt "
-    "as a document.\n\n"
+    "In a private chat, send the .txt as a document (safer), "
+    "or paste the cookie.txt text after the command.\n\n"
     "/save_as_cookie\n"
     "# Netscape HTTP Cookie File\n"
     "…"
@@ -105,10 +114,28 @@ def handle_cookies_help(
     )
 
 
-def handle_clear_cookies(api: BotAPI, data_dir: Path, chat_id: int) -> Status:
+def handle_clear_cookies(
+    api: BotAPI,
+    data_dir: Path,
+    chat_id: int,
+    *,
+    user_id: int | None = None,
+) -> Status:
     if clear_user_cookies(data_dir, chat_id):
-        return _notice(api, chat_id, "YouTube sign-in file", COOKIES_CLEARED)
-    return _notice(api, chat_id, "YouTube sign-in file", COOKIES_NONE)
+        return _notice(
+            api,
+            chat_id,
+            "YouTube sign-in file",
+            COOKIES_CLEARED,
+            user_id=user_id,
+        )
+    return _notice(
+        api,
+        chat_id,
+        "YouTube sign-in file",
+        COOKIES_NONE,
+        user_id=user_id,
+    )
 
 
 def handle_save_as_cookie(
@@ -116,20 +143,60 @@ def handle_save_as_cookie(
     data_dir: Path,
     chat_id: int,
     text: str,
+    *,
+    user_id: int | None = None,
+    message_id: int | None = None,
 ) -> Status:
+    if not is_private_chat(chat_id):
+        return _notice(
+            api,
+            chat_id,
+            "YouTube sign-in file",
+            COOKIES_PRIVATE_ONLY,
+            user_id=user_id,
+        )
     parts = text.split(maxsplit=1)
     body = parts[1] if len(parts) > 1 else ""
     if not body.strip():
-        return _notice(api, chat_id, "YouTube sign-in file", SAVE_AS_HINT)
+        return _notice(
+            api,
+            chat_id,
+            "YouTube sign-in file",
+            SAVE_AS_HINT,
+            user_id=user_id,
+        )
     try:
         data = body.encode("utf-8")
     except UnicodeEncodeError:
-        return _notice(api, chat_id, "YouTube sign-in file", "That text is not a login file.")
+        return _notice(
+            api,
+            chat_id,
+            "YouTube sign-in file",
+            "That text is not a login file.",
+            user_id=user_id,
+        )
     error = validate_cookie_bytes(data)
     if error is not None:
-        return _notice(api, chat_id, "YouTube sign-in file", error)
+        return _notice(
+            api,
+            chat_id,
+            "YouTube sign-in file",
+            error,
+            user_id=user_id,
+        )
     save_user_cookies(data_dir, chat_id, data)
-    return _notice(api, chat_id, "YouTube sign-in file", COOKIES_SAVED)
+    if message_id is not None:
+        try:
+            api.delete_message(chat_id, message_id)
+        except BotAPIError:
+            pass
+    return _notice(
+        api,
+        chat_id,
+        "YouTube sign-in file",
+        COOKIES_SAVED_PASTE,
+        user_id=user_id,
+    )
 
 
 def _as_mapping(value: object) -> Mapping[str, object] | None:
@@ -147,29 +214,69 @@ def handle_cookie_document(
     data_dir: Path,
     chat_id: int,
     document: Mapping[str, object],
+    *,
+    user_id: int | None = None,
 ) -> Status | None:
     name = str(document.get("file_name") or "")
     size = document.get("file_size")
     file_id = document.get("file_id")
     if not isinstance(file_id, str) or not file_id:
         return None
+    if not is_private_chat(chat_id):
+        return _notice(
+            api,
+            chat_id,
+            "YouTube sign-in file",
+            COOKIES_PRIVATE_ONLY,
+            user_id=user_id,
+        )
     if not is_cookie_filename(name):
-        return _notice(api, chat_id, "YouTube sign-in file", NOT_TXT)
+        return _notice(
+            api,
+            chat_id,
+            "YouTube sign-in file",
+            NOT_TXT,
+            user_id=user_id,
+        )
     if isinstance(size, int) and size > MAX_COOKIE_BYTES:
-        return _notice(api, chat_id, "YouTube sign-in file", TOO_LARGE)
+        return _notice(
+            api,
+            chat_id,
+            "YouTube sign-in file",
+            TOO_LARGE,
+            user_id=user_id,
+        )
     try:
         info = api.get_file(file_id)
     except BotAPIError:
-        return _notice(api, chat_id, "YouTube sign-in file", DOWNLOAD_FAILED)
+        return _notice(
+            api,
+            chat_id,
+            "YouTube sign-in file",
+            DOWNLOAD_FAILED,
+            user_id=user_id,
+        )
     file_path = info.get("file_path")
     if not isinstance(file_path, str) or not file_path:
-        return _notice(api, chat_id, "YouTube sign-in file", DOWNLOAD_FAILED)
+        return _notice(
+            api,
+            chat_id,
+            "YouTube sign-in file",
+            DOWNLOAD_FAILED,
+            user_id=user_id,
+        )
     tmp = data_dir / "tmp" / f"{chat_id}-incoming-cookie.txt"
     try:
         api.download_file(file_path, tmp, max_bytes=MAX_COOKIE_BYTES)
         data = tmp.read_bytes()
     except (BotAPIError, OSError):
-        return _notice(api, chat_id, "YouTube sign-in file", DOWNLOAD_FAILED)
+        return _notice(
+            api,
+            chat_id,
+            "YouTube sign-in file",
+            DOWNLOAD_FAILED,
+            user_id=user_id,
+        )
     finally:
         tmp.unlink(missing_ok=True)
         parent = tmp.parent
@@ -177,6 +284,18 @@ def handle_cookie_document(
             parent.rmdir()
     error = validate_cookie_bytes(data)
     if error is not None:
-        return _notice(api, chat_id, "YouTube sign-in file", error)
+        return _notice(
+            api,
+            chat_id,
+            "YouTube sign-in file",
+            error,
+            user_id=user_id,
+        )
     save_user_cookies(data_dir, chat_id, data)
-    return _notice(api, chat_id, "YouTube sign-in file", COOKIES_SAVED)
+    return _notice(
+        api,
+        chat_id,
+        "YouTube sign-in file",
+        COOKIES_SAVED,
+        user_id=user_id,
+    )

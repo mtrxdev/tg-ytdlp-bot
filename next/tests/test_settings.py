@@ -108,6 +108,10 @@ def test_settings_reads_cookies_path(tmp_path: Path) -> None:
         relative_to=tmp_path,
     )
     assert settings.cookies == cookies
+    shown = repr(settings)
+    assert settings.bot_token not in shown
+    assert str(cookies) not in shown
+    assert "cookies=set" in shown
 
 
 def test_missing_explicit_config_raises(tmp_path: Path) -> None:

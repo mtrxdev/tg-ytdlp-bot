@@ -27,11 +27,4 @@ def user_download_error(error: str | None) -> str:
         or "impersonat" in lowered
     ):
         return _SITE_BLOCKED
-    if (
-        text.startswith("ERROR:")
-        or "--" in text
-        or "[generic]" in lowered
-        or "[youtube]" in lowered
-    ):
-        return _GENERIC_FAIL
-    return text
+    return _GENERIC_FAIL

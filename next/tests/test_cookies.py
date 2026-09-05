@@ -23,7 +23,9 @@ from tgytdlp.telegram.handlers.cookies import (
     COOKIES_HAVE,
     COOKIES_HELP,
     COOKIES_NONE,
+    COOKIES_PRIVATE_ONLY,
     COOKIES_SAVED,
+    COOKIES_SAVED_PASTE,
     is_clear_cookies_command,
     is_cookies_command,
     is_save_as_cookie_command,
@@ -65,6 +67,8 @@ def test_save_resolve_and_clear(tmp_path: Path) -> None:
     saved = save_user_cookies(data_dir, 7, VALID.encode())
     assert saved == user_cookie_path(data_dir, 7)
     assert saved.read_text(encoding="utf-8") == VALID
+    assert saved.stat().st_mode & 0o777 == 0o600
+    assert saved.parent.stat().st_mode & 0o777 == 0o700
     assert resolve_cookies(data_dir, 7, fallback) == saved
     assert clear_user_cookies(data_dir, 7) is True
     assert cookies_for_chat(data_dir, 7) is None
@@ -102,12 +106,18 @@ def test_process_update_save_as_cookie_and_clear(tmp_path: Path) -> None:
             {
                 "message": {
                     "chat": {"id": 11},
+                    "message_id": 77,
                     "text": f"/save_as_cookie\n{VALID}",
                 }
             },
         )
         assert cookies_for_chat(settings.data_dir, 11) is not None
-        assert COOKIES_SAVED in last_rich_text(fake.calls)
+        shown = last_rich_text(fake.calls)
+        assert COOKIES_SAVED_PASTE in shown
+        assert "SID" not in shown
+        assert "\tx\n" not in shown
+        methods = [str(call["method"]) for call in fake.calls]
+        assert "deleteMessage" in methods
         process_update(
             api,
             settings,
@@ -185,6 +195,65 @@ def test_process_update_rejects_non_txt_document(tmp_path: Path) -> None:
         )
         assert NOT_TXT in last_rich_text(fake.calls)
         assert cookies_for_chat(settings.data_dir, 22) is None
+        store.close()
+    finally:
+        fake.stop()
+
+
+def test_process_update_rejects_group_cookie_paste(tmp_path: Path) -> None:
+    fake = FakeBotAPI("1234567890:AAExampleTokenValue_12-xx")
+    fake.start()
+    try:
+        settings = _settings(tmp_path, fake.base_url)
+        store = Store(settings.data_dir / "bot.sqlite")
+        api = BotAPI(fake.token, fake.base_url, timeout=5)
+        process_update(
+            api,
+            settings,
+            store,
+            {
+                "message": {
+                    "chat": {"id": -100},
+                    "from": {"id": 9},
+                    "text": f"/save_as_cookie\n{VALID}",
+                }
+            },
+        )
+        assert cookies_for_chat(settings.data_dir, -100) is None
+        assert COOKIES_PRIVATE_ONLY in last_rich_text(fake.calls)
+        store.close()
+    finally:
+        fake.stop()
+
+
+def test_process_update_rejects_group_cookie_document(tmp_path: Path) -> None:
+    fake = FakeBotAPI("1234567890:AAExampleTokenValue_12-xx")
+    fake.add_document("fileCCC", VALID.encode())
+    fake.start()
+    try:
+        settings = _settings(tmp_path, fake.base_url)
+        store = Store(settings.data_dir / "bot.sqlite")
+        api = BotAPI(fake.token, fake.base_url, timeout=5)
+        process_update(
+            api,
+            settings,
+            store,
+            {
+                "message": {
+                    "chat": {"id": -200},
+                    "from": {"id": 9},
+                    "document": {
+                        "file_id": "fileCCC",
+                        "file_name": "cookies.txt",
+                        "file_size": len(VALID.encode()),
+                    },
+                }
+            },
+        )
+        assert cookies_for_chat(settings.data_dir, -200) is None
+        assert COOKIES_PRIVATE_ONLY in last_rich_text(fake.calls)
+        methods = [str(call["method"]) for call in fake.calls]
+        assert "getFile" not in methods
         store.close()
     finally:
         fake.stop()

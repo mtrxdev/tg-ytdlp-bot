@@ -1,3 +1,4 @@
+import sqlite3
 from pathlib import Path
 
 from tgytdlp.config import settings_from_mapping
@@ -131,10 +132,93 @@ def test_failed_url_edits_status_and_cleans(tmp_path: Path) -> None:
         assert isinstance(body, dict)
         rich = body["rich_message"]
         assert isinstance(rich, dict)
-        assert flatten_rich(rich).startswith("Could not download")
+        shown = flatten_rich(rich)
+        assert shown.startswith("Could not download")
+        assert "partial.bin" not in shown
+        assert str(settings.data_dir) not in shown
+        db = sqlite3.connect(settings.data_dir / "bot.sqlite")
+        try:
+            row = db.execute("SELECT error FROM jobs").fetchone()
+        finally:
+            db.close()
+        assert row is not None
+        assert row[0] is not None
+        assert "partial.bin" not in row[0]
+        assert "ERROR:" not in row[0]
         files_root = settings.data_dir / "files"
         leftovers = list(files_root.rglob("*")) if files_root.exists() else []
         assert leftovers == []
+        store.close()
+    finally:
+        fake.stop()
+
+
+def test_failed_url_does_not_store_raw_worker_error(tmp_path: Path) -> None:
+    fake = FakeBotAPI("1234567890:AAExampleTokenValue_12-xx")
+    fake.start()
+    try:
+        settings = settings_from_mapping(
+            {
+                "TG_BOT_TOKEN": "1234567890:AAExampleTokenValue_12-xx",
+                "TG_API_BASE": fake.base_url,
+                "TG_DATA_DIR": str(tmp_path / "data"),
+                "TG_POLL_TIMEOUT": "1",
+            },
+            relative_to=tmp_path,
+        )
+        settings.data_dir.mkdir(parents=True)
+        store = Store(settings.data_dir / "bot.sqlite")
+        api = BotAPI(fake.token, fake.base_url, timeout=5)
+        leak = (
+            "yt-dlp produced no file: /secret/users/7/cookie.txt "
+            "SID=leaked --cookies /bot1234567890:AAExample/getMe"
+        )
+
+        def runner(job_path: Path, timeout: int) -> None:
+            spec = read_job(job_path)
+            write_result(
+                job_path,
+                ResultSpec(
+                    job_id=spec.job_id,
+                    ok=False,
+                    path=None,
+                    title=None,
+                    error=leak,
+                    result_path=job_path,
+                ),
+            )
+
+        handle_url(
+            api,
+            settings,
+            store,
+            10,
+            "https://example.com/v",
+            runner=runner,
+        )
+        rich_sends = [
+            call for call in fake.calls if call["method"] == "sendRichMessage"
+        ]
+        body = rich_sends[-1]["body"]
+        assert isinstance(body, dict)
+        rich = body["rich_message"]
+        assert isinstance(rich, dict)
+        shown = flatten_rich(rich)
+        assert "SID=" not in shown
+        assert "cookie.txt" not in shown
+        assert "/secret/" not in shown
+        assert "1234567890" not in shown
+        db = sqlite3.connect(settings.data_dir / "bot.sqlite")
+        try:
+            row = db.execute("SELECT error FROM jobs").fetchone()
+        finally:
+            db.close()
+        assert row is not None
+        stored = row[0] or ""
+        assert "SID=" not in stored
+        assert "/secret/" not in stored
+        assert "cookie.txt" not in stored
+        assert "1234567890" not in stored
         store.close()
     finally:
         fake.stop()
