@@ -43,7 +43,7 @@ def start_rich(text: str) -> dict[str, object]:
         heading("Send a link"),
         paragraph(text),
         divider(),
-        footer("Buttons stay. Status lines disappear after the file arrives."),
+        footer("I react to your link and use Telegram’s uploading status. No leftover wait lines."),
     )
 
 
@@ -65,6 +65,36 @@ def cookies_rich(status: str, help_text: str) -> dict[str, object]:
         ),
         footer(help_text),
     )
+
+
+def thinking(text: str) -> dict[str, object]:
+    return {"type": "thinking", "text": text}
+
+
+def checkbox_list(items: Sequence[str], checked_through: int) -> dict[str, object]:
+    entries: list[dict[str, object]] = []
+    for index, item in enumerate(items):
+        entries.append(
+            {
+                "blocks": [paragraph(item)],
+                "has_checkbox": True,
+                "is_checked": index <= checked_through,
+            }
+        )
+    return {"type": "list", "items": entries}
+
+
+DRAFT_STEPS = ("Got your link", "Fetching the file", "Sending it here")
+
+
+def draft_rich(step: int, *, host: str) -> dict[str, object]:
+    clamped = min(max(step, 0), 2)
+    thoughts = (
+        f"Opening {host}",
+        f"Fetching from {host}",
+        "Sending the file",
+    )
+    return rich_blocks(thinking(thoughts[clamped]), checkbox_list(DRAFT_STEPS, clamped))
 
 
 def progress_rich(title: str, body: str) -> dict[str, object]:

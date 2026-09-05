@@ -10,9 +10,9 @@ START_TEXT = (
 )
 
 HOW_TEXT = (
-    "1. Paste an http(s) URL.\n"
-    "2. A worker process runs yt-dlp. This chat process never imports it.\n"
-    "3. I send the file with sendDocument.\n"
+    "1. Paste an http(s) URL. I react to that message.\n"
+    "2. Telegram shows the bot uploading a file. A short draft lists the steps.\n"
+    "3. The file arrives as a reply. The draft goes away. No leftover wait line.\n"
     "4. If YouTube asks you to sign in, send a cookie.txt document. "
     "Tap “YouTube sign-in file” for the steps."
 )

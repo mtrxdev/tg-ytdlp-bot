@@ -106,12 +106,14 @@ def test_handle_url_sends_worker_file(tmp_path: Path) -> None:
             10,
             "https://example.com/v",
             runner=runner,
+            message_id=88,
         )
         methods = [str(call["method"]) for call in fake.calls]
         assert "sendChatAction" in methods
-        assert "sendRichMessage" in methods
+        assert "sendRichMessageDraft" in methods
+        assert "setMessageReaction" in methods
         assert "sendDocument" in methods
-        assert "deleteMessages" in methods
+        assert "sendRichMessage" not in methods
         files_root = settings.data_dir / "files"
         leftovers = list(files_root.rglob("*")) if files_root.exists() else []
         assert leftovers == []

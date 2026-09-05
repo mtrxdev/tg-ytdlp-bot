@@ -117,9 +117,21 @@ def test_failed_url_edits_status_and_cleans(tmp_path: Path) -> None:
             message_id=99,
         )
         methods = [str(call["method"]) for call in fake.calls]
+        assert "sendChatAction" in methods
+        assert "sendRichMessageDraft" in methods
+        assert "setMessageReaction" in methods
         assert "sendRichMessage" in methods
-        assert "editMessageText" in methods
+        assert "editMessageText" not in methods
         assert "sendDocument" not in methods
+        rich_sends = [
+            call for call in fake.calls if call["method"] == "sendRichMessage"
+        ]
+        assert len(rich_sends) == 1
+        body = rich_sends[0]["body"]
+        assert isinstance(body, dict)
+        rich = body["rich_message"]
+        assert isinstance(rich, dict)
+        assert flatten_rich(rich).startswith("Could not download")
         files_root = settings.data_dir / "files"
         leftovers = list(files_root.rglob("*")) if files_root.exists() else []
         assert leftovers == []

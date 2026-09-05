@@ -13,7 +13,8 @@ next/
       poll.py                # getUpdates long poll
       ids.py                 # chat / message / ephemeral ids
       rich.py                # InputRichMessage blocks
-      status.py              # one overlay: send, edit, delete
+      status.py              # help / error overlay: send, edit, delete
+      progress.py            # chat action + rich draft + reaction
       handlers/
         start.py             # /start + inline keyboard
         callbacks.py

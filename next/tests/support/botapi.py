@@ -123,6 +123,7 @@ class FakeBotAPI:
                     "deleteMessages",
                     "deleteEphemeralMessage",
                     "setMessageReaction",
+                    "sendRichMessageDraft",
                 }:
                     payload = {"ok": True, "result": True}
                 else:

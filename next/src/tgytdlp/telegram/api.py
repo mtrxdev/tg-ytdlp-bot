@@ -144,6 +144,24 @@ class BotAPI:
             payload["ephemeral_message_parameters"] = dict(ephemeral_message_parameters)
         return _as_object(self.call("sendRichMessage", payload), "sendRichMessage")
 
+    def send_rich_message_draft(
+        self,
+        chat_id: int,
+        draft_id: int,
+        rich_message: Mapping[str, object],
+    ) -> bool:
+        return (
+            self.call(
+                "sendRichMessageDraft",
+                {
+                    "chat_id": chat_id,
+                    "draft_id": draft_id,
+                    "rich_message": dict(rich_message),
+                },
+            )
+            is True
+        )
+
     def edit_message_text(
         self,
         chat_id: int,
